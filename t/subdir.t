@@ -14,7 +14,7 @@ BEGIN {
     } else {
 	$iswin32 = $^O eq "MSWin32";
     }
-    plan tests => 19, onfail => sub { $? = 1 if $ENV{AEGIS_TEST} }
+    plan tests => 21, onfail => sub { $? = 1 if $ENV{AEGIS_TEST} }
 }
 END {print "not ok 1\n" unless $loaded;}
 use Test::Cmd;
@@ -55,6 +55,9 @@ ok($ret == 1);
 $ret = $test->subdir('one', ['one', 'two'], [qw(one two three)]);
 ok($ret == 3);
 
+$ret = $test->subdir([$wdir, 'a'], [$wdir, 'a', 'b']);
+ok($ret == 2);
+
 ok(-d 'foo');
 ok(-d 'bar');
 ok(-d $test->workpath('foo', 'succeed'));
@@ -63,3 +66,4 @@ ok( -d 'sub');
 ok(! -d $test->workpath(qw(sub dir)));
 ok(! -d $test->workpath(qw(sub dir ectory)));
 ok(-d $test->workpath(qw(one two three)));
+ok(-d $test->workpath(qw(a b)));

@@ -11,13 +11,12 @@ package Test::Cmd;
 
 use strict;
 use vars qw($VERSION @ISA @EXPORT_OK);
-use Cwd;
 use Exporter;
 use File::Basename ();	# don't import the basename() method, we redefine it
 use File::Find;
 use File::Spec;
 
-$VERSION = '1.04';
+$VERSION = '1.05';
 @ISA = qw(Exporter File::Spec);
 @EXPORT_OK = qw(match_exact match_regex diff_exact diff_regex);
 
@@ -68,7 +67,9 @@ Test::Cmd - Perl module for portable testing of commands and scripts
   $test->read(\$contents, ['subdir', 'file']);
   $test->read(\@lines, ['subdir', 'file']);
 
-  $test->writable('dir', rwflag);
+  $test->writable('dir');
+  $test->writable('dir', $rwflag);
+  $test->writable('dir', $rwflag, \%errors);
 
   $test->preserve(condition, ...);
 
@@ -81,21 +82,21 @@ Test::Cmd - Perl module for portable testing of commands and scripts
   EOF
 
   $test->pass(condition);
-  $test->pass(condition, funcref);
+  $test->pass(condition, \&func);
 
   $test->fail(condition);
-  $test->fail(condition, funcref);
-  $test->fail(condition, funcref, caller);
+  $test->fail(condition, \&func);
+  $test->fail(condition, \&func, $caller);
 
   $test->no_result(condition);
-  $test->no_result(condition, funcref);
-  $test->no_result(condition, funcref, caller);
+  $test->no_result(condition, \&func);
+  $test->no_result(condition, \&func, $caller);
 
   $test->stdout;
-  $test->stdout(run_number);
+  $test->stdout($run_number);
 
   $test->stderr;
-  $test->stderr(run_number);
+  $test->stderr($run_number);
 
   $test->match(\@lines, \@matches);
   $test->match($lines, $matches);
@@ -123,18 +124,37 @@ Test::Cmd - Perl module for portable testing of commands and scripts
 
 =head1 DESCRIPTION
 
-The C<Test::Cmd> module provides a framework for portable automated
-testing of executable commands and scripts (in any language, not
-just Perl), especially commands and scripts that require file system
-interaction.
+The C<Test::Cmd> module provides a low-level framework for portable
+automated testing of executable commands and scripts (in any language,
+not just Perl), especially commands and scripts that interact with the
+file system.
+
+The C<Test::Cmd> module makes no assumptions about what constitutes
+a successful or failed test.  Attempting to read a file that doesn't
+exist, for example, may or may not be an error, depending on the
+software being tested.
+
+Consequently, no C<Test::Cmd> methods (including the C<new()> method)
+exit, die or throw any other sorts of exceptions (but they all do return
+useful error indications).  Exceptions or other error status should
+be handled by a higher layer: a subclass of C<Test::Cmd>, or another
+testing framework such as the C<Test> or C<Test::Simple> Perl modules,
+or by the test itself.
+
+(That said, see the C<Test::Cmd::Common> module if you want a similar
+module that provides exception handling, either to use directly in your
+own tests, or as an example of how to use C<Test::Cmd>.)
 
 In addition to running tests and evaluating conditions, the C<Test::Cmd>
-module manages and cleans up one or more temporary workspace directories,
-and provides methods for creating files and directories in those workspace
-directories from in-line data (that is, here-documents), allowing tests
-to be completely self-contained.
+module manages and cleans up one or more temporary workspace
+directories, and provides methods for creating files and directories in
+those workspace directories from in-line data (that is, here-documents),
+allowing tests to be completely self-contained.  When used in
+conjunction with another testing framework, the C<Test::Cmd> module can
+function as a I<fixture> (common startup code for multiple tests) for
+simple management of command execution and temporary workspaces.
 
-The C<Test::Cmd> module inherits File::Spec methods
+The C<Test::Cmd> module inherits C<File::Spec> methods
 (C<file_name_is_absolute()>, C<catfile()>, etc.) to support writing
 tests portably across a variety of operating and file systems.
 
@@ -146,56 +166,187 @@ Arguments to the C<Test::Cmd::new> method are keyword-value pairs that
 may be used to initialize the object, typically by invoking the same-named
 method as the keyword.
 
-No C<Test::Cmd> methods (including the C<new()> method) exit, die
-or throw any other sorts of exceptions (but they all do return useful
-error indications).  Exceptions should be handled by the test itself or
-a subclass specific to the program under test.
+=head1 TESTING FRAMEWORKS
 
-The C<Test::Cmd> module may be used in conjunction with the C<Test> module
-to report test results in a format suitable for the C<Test::Harness>
-module.  A typical use would be to call the C<Test::Cmd> methods to
-prepare and execute the test, and call the C<ok()> method exported by the
-C<Test> module to test the conditions:
+As mentioned, because the C<Test::Cmd> module makes no assumptions
+about what constitutes success or failure of a test, it can be used to
+provide temporary workspaces, other file system interaction, or command
+execution for a variety of testing frameworks.  This section describes
+how to use the C<Test::Cmd> with several different higher-layer testing
+frameworks.
 
-    use Test;
+Note that you should I<not> intermix multiple testing frameworks in a
+single testing script.
+
+=head2 C<Test::Harness>
+
+The C<Test::Cmd> module may be used in tests that print results in a
+format suitable for the standard Perl C<Test::Harness> module:
+
     use Test::Cmd;
-    BEGIN { $| = 1; plan => 3 }
+
+    print "1..5\n";
+
     $test = Test::Cmd->new(prog => 'test_program', workdir => '');
-    ok($test);
-    $wrote_file = $test->write('input_file', <<'EOF');
-    This is input to test_program,
-    which we expect to process this
+    if ($test) { print "ok 1\n"; } else { print "not ok 1\n"; }
+
+    $input = <<_EOF;
+    test_program should process this input
+    and exit successfully (status 0).
+    _EOF_
+
+    $wrote_file = $test->write('input_file', $input);
+    if ($wrote_file) { print "ok 2\n"; } else { print "not ok 2\n"; }
+
+    $test->run(args => '-x input_file');
+    if ($? == 0) { print "ok 3\n"; } else { print "not ok 3\n"; }
+
+    $wrote_file = $test->write('input_file', $input);
+    if ($wrote_file) { print "ok 4\n"; } else { print "not ok 4\n"; }
+
+    $test->run(args => '-y input_file');
+    if ($? == 0) { print "ok 5\n"; } else { print "not ok 5\n"; }
+
+Several other Perl modules simplify the use of C<Test::Harness>
+by eliminating the need to hand-code the C<print> statements and
+test numbers.  The C<Test> module, the C<Test::Simple> module, and
+the C<Test::More> module all export an C<ok()> subroutine to test
+conditions.  Here is how the above example would look rewritten to use
+C<Test::Simple>:
+
+    use Test::Simple tests => 5;
+    use Test::Cmd;
+
+    $test = Test::Cmd->new(prog => 'test_program', workdir => '');
+    ok($test, "creating Test::Cmd object");
+
+    $input = <<_EOF;
+    test_program should process this input
+    and exit successfully (status 0).
+    _EOF_
+
+    $wrote_file = $test->write('input_file', $input);
+    ok($wrote_file, "writing input_file");
+
+    $test->run(args => '-x input_file');
+    ok($? == 0, "executing test_program -x input_file");
+
+    $wrote_file = $test->write('input_file', $input);
+    ok($wrote_file, "writing input_file");
+
+    $test->run(args => '-y input_file');
+    ok($? == 0, "executing test_program -y input_file");
+
+=head2 C<Test::Unit>
+
+The Perl C<Test::Unit> package provides a procedural testing interface
+modeled after a testing framework widely used in the eXtreme Programming
+development methodology.  The C<Test::Cmd> module can function as part
+of a C<Test::Unit> fixture that can set up workspaces as needed for a
+set of tests.  This avoids having to repeat code to re-initialize an
+input file multiple times:
+
+    use Test::Unit;
+    use Test::Cmd;
+    
+    my $test;
+    
+    $input = <<'EOF';
+    test_program should process this input
     and exit successfully (status 0).
     EOF
-    ok($wrote_file);
-    $test->run(args => 'input_file');
-    ok($? == 0);
+    
+    sub set_up {
+        $test = Test::Cmd->new(prog => 'test_program', workdir => '');
+        $test->write('input_file', $input);
+    }
+    
+    sub test_x {
+        my $result = $test->run(args => '-x input_file');
+        assert($result == 0, "failed test_x\n");
+    }
+    
+    sub test_y {
+        my $result = $test->run(args => '-y input_file');
+        assert($result == 0, "failed test_y\n");
+    }
+    
+    create_suite();
+    run_suite;
+
+Note that, because the C<Test::Cmd> module takes care of cleaning up
+temporary workspaces on exit, there is no need to remove explicitly the
+workspace in a C<tear_down> subroutine.  (There may, of course, be other
+things in the test that need a C<tear_down> subroutine.)
+
+=head2 Aegis
 
 Alternatively, the C<Test::Cmd> module provides C<pass()>, C<fail()>,
-and C<no_result()> methods that report test results for use with the Aegis
-change management system.  These methods terminate the test immediately,
-reporting PASSED, FAILED, or NO RESULT respectively, and exiting with
-status 0 (success), 1 or 2 respectively.  This allows for a distinction
-between an actual failed test and a test that could not be properly
-evaluated because of an external condition (such as a full file system
-or incorrect permissions):
+and C<no_result()> methods that can be used to provide an appropriate
+exit status and simple printed indication for a test.  These methods
+terminate the test immediately, reporting C<PASSED>, C<FAILED>, or
+C<NO RESULT> respectively, and exiting with status 0 (success), 1 or 2
+respectively.
+
+The separate C<fail()> and C<no_result()> methods allow for a
+distinction between an actual failed test and a test that could not be
+properly evaluated because of an external condition (such as a full file
+system or incorrect permissions).
+
+The exit status values happen to match the requirements of the Aegis
+change management system, and the printed strings are based on existing
+Aegis conventions.  They are not really Aegis-specific, however, and
+provide a simple, useful starting point if you don't already have
+another testing framework:
 
     use Test::Cmd;
+
     $test = Test::Cmd->new(prog => 'test_program', workdir => '');
     Test::Cmd->no_result(! $test);
-    $wrote_file = $test->write('input_file', <<'EOF');
-    This is input to test_program,
-    which we expect to process this
+
+    $input = <<EOF;
+    test_program should process this input
     and exit successfully (status 0).
     EOF
+
+    $wrote_file = $test->write('input_file', $input);
     $test->no_result(! $wrote_file);
-    $test->run(args => 'input_file');
+
+    $test->run(args => '-x input_file');
     $test->fail($? != 0);
+
+    $wrote_file = $test->write('input_file', $input);
+    $test->no_result(! $wrote_file);
+
+    $test->run(args => '-y input_file');
+    $test->fail($? != 0);
+
     $test->pass;
 
-It is not a good idea to intermix the two reporting models.  If you use
-the C<Test> module and its C<ok> method, do not use the C<Test::Cmd>
-C<pass>, C<fail> or C<no_result> methods, and vice versa.
+Note that the separate C<Test::Cmd::Common> wrapper module can simplify
+the above example even further by taking care of common exception
+handling cases within the testing object itself.
+
+    use Test::Cmd::Common;
+
+    $test = Test::Cmd::Common->new(prog => 'test_program', workdir => '');
+
+    $input = <<EOF;
+    test_program should process this input
+    and exit successfully (status 0).
+    EOF
+
+    $wrote_file = $test->write('input_file', $input);
+
+    $test->run(args => '-x input_file');
+
+    $wrote_file = $test->write('input_file', $input);
+
+    $test->run(args => '-y input_file');
+
+    $test->pass;
+
+See the C<Test::Cmd::Common> module for details.
 
 =head1 METHODS
 
@@ -242,6 +393,7 @@ BEGIN {
 	# version of File::Spec::Win32::tmpdir.
 	push @tmps, (@ENV{qw(TMPDIR TEMP TMP)}, qw(/tmp /));
     } else {
+	eval("use Cwd");
 	$Test::Cmd::Temp_Prefix = "testcmd$$.";
 	$Test::Cmd::Cwd_Ref = \&Cwd::cwd;
 	# Test for UNIX temporary directories.
@@ -264,9 +416,9 @@ BEGIN {
     # The following better way isn't available in the Cwd module
     # until sometime after 5.003:
     #	$Test::Cmd::TMPDIR = Cwd::abs_path($Test::Cmd::TMPDIR);
-    my($save) = Cwd::cwd();
+    my($save) = &$Test::Cmd::Cwd_Ref();
     chdir($Test::Cmd::TMPDIR);
-    $Test::Cmd::TMPDIR = Cwd::cwd();
+    $Test::Cmd::TMPDIR = &$Test::Cmd::Cwd_Ref();
     chdir($save);
 
     $Default = {};
@@ -330,7 +482,7 @@ sub new {
     $self->{'preserve'} = {};
     %{$self->{'preserve'}} = %{$Default->{'preserve'}};
 
-    $self->{'cwd'} = cwd();
+    $self->{'cwd'} = &$Test::Cmd::Cwd_Ref();
 
     while (@_) {
 	my $keyword = shift;
@@ -477,9 +629,9 @@ sub workdir {
 	# workdir isn't available in the Cwd module until sometime
 	# after 5.003:
 	#	$self->{'workdir'} = Cwd::abs_path($wdir);
-	my($save) = Cwd::cwd();
+	my($save) = &$Test::Cmd::Cwd_Ref();
 	chdir($wdir);
-	$self->{'workdir'} = Cwd::cwd();
+	$self->{'workdir'} = &$Test::Cmd::Cwd_Ref();
 	chdir($save);
 	push(@{$self->{'cleanup'}}, $self->{'workdir'});
     }
@@ -522,7 +674,10 @@ sub subdir {
     my $self = shift;
     my $count = 0;
     foreach (@_) {
-	my $newdir = $self->catfile($self->{'workdir'}, ref $_ ? @$_ : $_);
+	my $newdir = ref $_ ? $self->catfile(@$_) : $_;
+	if (! $self->file_name_is_absolute($newdir)) {
+	    $newdir = $self->catfile($self->{'workdir'}, $newdir);
+	}
 	if (mkdir($newdir, 0755)) {
 	    $count++;
 	}
@@ -545,8 +700,9 @@ working directory.  Any subdirectories in the path must already exist.
 sub write {
     my $self = shift;
     my $file = shift; # the file to write to
+    $file = $self->catfile(@$file) if ref $file;
     if (! $self->file_name_is_absolute($file)) {
-	$file = $self->catfile($self->{'workdir'}, ref $file ? @$file : $file);
+	$file = $self->catfile($self->{'workdir'}, $file);
     }
     if (! open(OUT, ">$file")) {
 	return undef;
@@ -576,8 +732,9 @@ otherwise.
 sub read {
     my ($self, $destref, $file) = @_;
     return undef if ref $destref ne 'SCALAR' && ref $destref ne 'ARRAY';
+    $file = $self->catfile(@$file) if ref $file;
     if (! $self->file_name_is_absolute($file)) {
-	$file = $self->catfile($self->{'workdir'}, ref $file ? @$file : $file);
+	$file = $self->catfile($self->{'workdir'}, $file);
     }
     if (! open(IN, "<$file")) {
 	return undef;
@@ -598,30 +755,37 @@ sub read {
 
 =item C<writable>
 
-Makes the specified directory tree writable (C<rwflag> == TRUE) or not
-writable (C<rwflag> == FALSE).
+Makes every file and directory within the specified directory tree
+writable (C<rwflag> == TRUE) or not writable (C<rwflag> == FALSE).  The
+default is to make the directory tree writable.  Optionally fills in the
+supplied hash reference with a hash of path names that could not have
+their permissions set appropriately, with the reason why each could not
+be set.
 
 =cut
 
-sub _writable {
-    if (!chmod 0755, $_) {
-	no_result("Unable to change the access mode on '$_': $!\n");
-    }
-}
-
-sub _writeprotect {
-    if (!chmod 0555, $_) {
-	no_result("Unable to change the access mode on '$_': $!\n");
-    }
-}
+my $_errors;
 
 sub writable {
-    my ($self, $dir, $flag) = @_;
+    my ($self, $dir, $flag, $err) = @_;
+    $flag = 1 if ! defined $flag;
+    $Test::Cmd::_errors = $err || {};
     if ($flag) {
+	sub _writable {
+	    if (!chmod 0755, $_) {
+		$Test::Cmd::_errors->{$_} = $!;
+	    }
+	}
 	finddepth(\&_writable, $dir);
     } else {
+	sub _writeprotect {
+	    if (!chmod 0555, $_) {
+		$Test::Cmd::_errors->{$_} = $!;
+	    }
+	}
 	finddepth(\&_writeprotect, $dir);
     }
+    return 0 + keys %$Test::Cmd::_errors;
 }
 
 
@@ -758,7 +922,7 @@ sub run {
     my %args = @_;
     my $oldcwd;
     if ($args{'chdir'}) {
-	$oldcwd = Cwd::cwd();
+	$oldcwd = &$Test::Cmd::Cwd_Ref();
 	if (! $self->file_name_is_absolute($args{'chdir'})) {
 	    $args{'chdir'} = $self->catfile($self->{'workdir'}, $args{'chdir'});
 	}
@@ -1449,15 +1613,17 @@ Addtional hints on writing portable tests are welcome.
 =head1 SEE ALSO
 
 perl(1), Algorithm::DiffOld(3), File::Find(3), File::Spec(3), Test(3),
-Test::Harness(3).
+Test::Cmd::Common(3), Test::Harness(3), Test::More(3), Test::Simple(3),
+Test::Unit(3).
 
-A rudimentary page for the Test::Cmd module is available at:
+A rudimentary page for the C<Test::Cmd> module is available at:
 
 	http://www.baldmt.com/Test-Cmd/
 
-The most involved example of using the Test::Cmd package to test a
-real-world application is the C<cons-test> testing suite for the
-Cons software construction utility.  The suite sub-classes Test::Cmd
+The most involved example of using the C<Test::Cmd> package to test
+a real-world application is the C<cons-test> testing suite for the
+Cons software construction utility.  The suite uses a sub-class of
+C<Test::Cmd::Common> (which in turn is a sub-class of C<Test::Cmd>)
 to provide common, application-specific infrastructure across a
 large number of end-to-end application tests.  The suite, and other
 information about Cons, is available at:
@@ -1491,5 +1657,13 @@ which integrates creation and execution of regression tests into the
 software development process.  Information about Aegis is available at:
 
 	http://www.tip.net.au/~millerp/aegis.html
+
+Thanks to Michael Schwern for all of the thoughtful work he's put into
+Perl's standard testing methodology, including the C<Test::Simple> and
+C<Test::More> modules, and enhancement and maintenance of the C<Test>
+and C<Test::Harness> modules.  Thanks also to Christian Lemburg for
+the impressively complete C<Test::Unit> framework of modules.  Ideas
+from both have helped keep C<Test::Cmd> flexible enough to be useful in
+multiple testing frameworks.
 
 =cut

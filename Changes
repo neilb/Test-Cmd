@@ -1,5 +1,28 @@
 Revision history for Perl extension Test::Cmd.
 
+1.05	
+
+	- Fix the subdir(), read(), and write() methods to handle
+	  the case when the first element in an array-reference file
+	  name is an absolute path name.
+
+	- Fix writable() so that it only records errors from chmod()
+	  on files, not exit with no_result().
+
+	- Doc changes to make some of the variables in the SYNOPSIS
+	  look like Perl variables.
+
+	- Add a Test::Cmd::Common module that sub-classes Test::Cmd to
+	  provide common exception-handling, eliminating the need for
+	  everyone to roll their own fail()/no_result() logic for common
+	  errors.
+
+	- Update Test::Cmd documentation to add explicit examples of
+	  using Test::Cmd in conjunction with Test::Harness, Test::Unit,
+	  and Aegis.  Mention that Test::Cmd::Common is available.
+
+
+
 1.04	Sat Jun 16 13:28:17 CDT 2001
 
 	- If the run() method is given an explicit 'prog' argument,

@@ -1,5 +1,6 @@
 Changes
 Cmd.pm
+Common.pm
 MANIFEST
 Makefile.PL
 README
@@ -33,3 +34,15 @@ t/workdirs.t
 t/workpath.t
 t/writable.t
 t/write.t
+t/Common/chmod.t
+t/Common/copy.t
+t/Common/f_matches.t
+t/Common/m_exist.t
+t/Common/m_n_exist.t
+t/Common/read.t
+t/Common/run.t
+t/Common/sleep.t
+t/Common/subdir.t
+t/Common/touch.t
+t/Common/unlink.t
+t/Common/write.t

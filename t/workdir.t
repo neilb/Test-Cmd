@@ -5,7 +5,17 @@
 ######################### We start with some black magic to print on failure.
 
 use Test;
-BEGIN { $| = 1; plan tests => 20, onfail => sub { $? = 1 if $ENV{AEGIS_TEST} } }
+my $iswin32;
+BEGIN {
+    $| = 1;
+    if ($] <  5.003) {
+	eval("require Win32");
+	$iswin32 = ! $@;
+    } else {
+	$iswin32 = $^O eq "MSWin32";
+    }
+    plan tests => 22, onfail => sub { $? = 1 if $ENV{AEGIS_TEST} }
+}
 END {print "not ok 1\n" unless $loaded;}
 use Test::Cmd;
 $loaded = 1;
@@ -56,3 +66,15 @@ ok($workdir_bar eq $test->workdir);
 
 ok(-d $workdir_foo);
 ok(-d $workdir_bar);
+
+if ($iswin32) {
+    eval("use Win32");
+    $cwd_ref = \&Win32::GetCwd;
+} else {
+    eval("use Cwd");
+    $cwd_ref = \&Cwd::cwd;
+}
+
+$ret = chdir($test->workdir);
+ok($ret);
+ok($test->workdir eq &$cwd_ref());

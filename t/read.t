@@ -14,7 +14,7 @@ BEGIN {
     } else {
 	$iswin32 = $^O eq "MSWin32";
     }
-    plan tests => 28, onfail => sub { $? = 1 if $ENV{AEGIS_TEST} }
+    plan tests => 44, onfail => sub { $? = 1 if $ENV{AEGIS_TEST} }
 }
 END {print "not ok 1\n" unless $loaded;}
 use Test::Cmd;
@@ -37,6 +37,10 @@ $wdir_file2 = $test->catfile($wdir, 'file2');
 ok($wdir_file2);
 $wdir_foo_file3 = $test->catfile($wdir, 'foo', 'file3');
 ok($wdir_foo_file3);
+$wdir_foo_file4 = $test->catfile($wdir, 'foo', 'file4');
+ok($wdir_foo_file4);
+$wdir_foo_file5 = $test->catfile($wdir, 'foo', 'file5');
+ok($wdir_foo_file5);
 
 $ret = open(OUT, ">$wdir_file1");
 ok($ret);
@@ -60,6 +64,28 @@ $ret = print OUT <<'_EOF_';
 Test
 file
 #3.
+_EOF_
+ok($ret);
+$ret = close(OUT);
+ok($ret);
+
+$ret = open(OUT, ">$wdir_foo_file4");
+ok($ret);
+$ret = print OUT <<'_EOF_';
+Test
+file
+#4.
+_EOF_
+ok($ret);
+$ret = close(OUT);
+ok($ret);
+
+$ret = open(OUT, ">$wdir_foo_file5");
+ok($ret);
+$ret = print OUT <<'_EOF_';
+Test
+file
+#5.
 _EOF_
 ok($ret);
 $ret = close(OUT);
@@ -95,3 +121,19 @@ ok(join('', @lines) eq "Test\nfile\n#3.\n");
 $ret = $test->read(\$contents, ['foo', 'file3']);
 ok($ret);
 ok($contents eq "Test\nfile\n#3.\n");
+
+$ret = $test->read(\@lines, $wdir_foo_file4);
+ok($ret);
+ok(join('', @lines) eq "Test\nfile\n#4.\n");
+
+$ret = $test->read(\$contents, $wdir_foo_file4);
+ok($ret);
+ok($contents eq "Test\nfile\n#4.\n");
+
+$ret = $test->read(\@lines, [$wdir, 'foo', 'file5']);
+ok($ret);
+ok(join('', @lines) eq "Test\nfile\n#5.\n");
+
+$ret = $test->read(\$contents, [$wdir, 'foo', 'file5']);
+ok($ret);
+ok($contents eq "Test\nfile\n#5.\n");
