@@ -41,17 +41,18 @@ A rudimentary page for the Test::Cmd module is available at:
 
 	http://www.baldmt.com/Test-Cmd/
 
+The most involved example of using the Test::Cmd package to test
+a real-world application is the "cons-test" testing suite for the
+Cons software construction utility.  The suite sub-classes Test::Cmd
+to provide common, application-specific infrastructure across a
+large number of end-to-end application tests.  The suite, and other
+information about Cons, is available at:
+
+	http://www.dsmit.com/cons
+
 
 
 TO DO
-
-The documentation lists a To-Be-Written Test::Cmd::diff() method
-that would be an extremely handy addition.  What I have in mind is
-to incorporate logic from Amir Karger's cdiff.pl front end to MJD's
-Algorithm::Diff module so that tests can generate diffs of actual and
-expected results without needing a diff program installed on the system.
-This is extra work to implement but makes the whole module as portable
-as possible to non-POSIX systems.
 
 The t/run.t test jumps through some complicated (but reasonably
 documented) hoops to generate an executable Perl script on Windows
@@ -59,11 +60,16 @@ NT systems.  I have no doubt that someone with a better knowledge of NT
 than mine could do this more simply, and would love to hear of a better
 solution than what I came up with.
 
+Adding a timeout() method would provide better test automation for
+applications that run the risk of hanging.
+
+A feature to time tests would be good.
+
 
 
 COPYRIGHT
 
-Copyright 1999-2000 Steven Knight.  All rights reserved.  This program
+Copyright 1999-2001 Steven Knight.  All rights reserved.  This program
 is free software; you can redistribute it and/or modify it under the
 same terms as Perl itself.
 

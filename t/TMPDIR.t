@@ -5,7 +5,7 @@
 ######################### We start with some black magic to print on failure.
 
 use Test;
-BEGIN { $| = 1; plan tests => 28, onfail => sub { $? = 1 if $ENV{AEGIS_TEST} } }
+BEGIN { $| = 1; plan tests => 43, onfail => sub { $? = 1 if $ENV{AEGIS_TEST} } }
 END {print "not ok 1\n" unless $loaded;}
 use Test::Cmd;
 $loaded = 1;
@@ -18,6 +18,21 @@ my @I_FLAGS = map(Test::Cmd->file_name_is_absolute($_) ? "-I$_" :
 			"-I".Test::Cmd->catfile($here, $_), @INC);
 
 my($run_env, $wdir, $ret, $test, $string);
+
+$run_env = Test::Cmd->new(workdir => '');
+ok($run_env);
+$tdir1 = $run_env->workdir;
+ok($tdir1);
+
+$run_env = Test::Cmd->new(workdir => '');
+ok($run_env);
+$tdir2 = $run_env->workdir;
+ok($tdir2);
+
+$run_env = Test::Cmd->new(workdir => '');
+ok($run_env);
+$tdir3 = $run_env->workdir;
+ok($tdir3);
 
 $run_env = Test::Cmd->new(workdir => '');
 ok($run_env);
@@ -40,6 +55,11 @@ sub contents {
 
 # Everything before this was merely preparation of our "source
 # directory."  Now we do some real tests.
+
+$ENV{PRESERVE} = '1';
+
+$ENV{TMPDIR} = $tdir1;
+
 $ret = open(PERL, "|$^X -w @I_FLAGS >perl.stdout.1 2>perl.stderr.1");
 ok($ret);
 
@@ -54,8 +74,6 @@ $ret = $test->write('file1', <<EOF_1);
 Test file #1.
 EOF_1
 $test->fail(! $ret);
-$test->cleanup;
-$test->fail(-d $wdir);
 $test->pass;
 EOF
 ok($ret);
@@ -71,7 +89,15 @@ $string = contents("perl.stderr.1");
 ok(defined $string);
 ok($string eq "PASSED\n");
 
-$ENV{PRESERVE_PASS} = '1';
+$path = Test::Cmd->catfile($tdir1, '*testcmd*', 'file1');
+ok(defined $path);
+$path =~ s#\\#/#g;
+$string = contents(eval "<$path>");
+ok(defined $string);
+ok($string eq "Test file #1.\n");
+
+#
+$ENV{TMPDIR} = $tdir2;
 
 $ret = open(PERL, "|$^X -w @I_FLAGS >perl.stdout.2 2>perl.stderr.2");
 ok($ret);
@@ -83,14 +109,10 @@ $test = Test::Cmd->new(workdir => '');
 Test::Cmd->fail(! $test);
 $wdir = $test->workdir;
 $test->fail(! $wdir);
-$ret = $test->write('file2', <<EOF_2);
+$ret = $test->write('file2', <<EOF_1);
 Test file #2.
-EOF_2
+EOF_1
 $test->fail(! $ret);
-$test->cleanup('pass');
-$test->fail(! -d $wdir);
-$test->cleanup('fail');
-$test->fail(-d $wdir);
 $test->pass;
 EOF
 ok($ret);
@@ -106,8 +128,15 @@ $string = contents("perl.stderr.2");
 ok(defined $string);
 ok($string eq "PASSED\n");
 
-delete $ENV{PRESERVE_PASS};
-$ENV{PRESERVE_FAIL} = '1';
+$path = Test::Cmd->catfile($tdir2, '*testcmd*', 'file2');
+ok(defined $path);
+$path =~ s#\\#/#g;
+$string = contents(eval "<$path>");
+ok(defined $string);
+ok($string eq "Test file #2.\n");
+
+#
+$ENV{TMPDIR} = Test::Cmd->catfile($tdir3, '');
 
 $ret = open(PERL, "|$^X -w @I_FLAGS >perl.stdout.3 2>perl.stderr.3");
 ok($ret);
@@ -119,14 +148,10 @@ $test = Test::Cmd->new(workdir => '');
 Test::Cmd->fail(! $test);
 $wdir = $test->workdir;
 $test->fail(! $wdir);
-$ret = $test->write('file3', <<EOF_3);
+$ret = $test->write('file3', <<EOF_1);
 Test file #3.
-EOF_3
+EOF_1
 $test->fail(! $ret);
-$test->cleanup('fail');
-$test->fail(! -d $wdir);
-$test->cleanup('pass');
-$test->fail(-d $wdir);
 $test->pass;
 EOF
 ok($ret);
@@ -141,3 +166,10 @@ ok(! $string);
 $string = contents("perl.stderr.3");
 ok(defined $string);
 ok($string eq "PASSED\n");
+
+$path = Test::Cmd->catfile($tdir3, '*testcmd*', 'file3');
+ok(defined $path);
+$path =~ s#\\#/#g;
+$string = contents(eval "<$path>");
+ok(defined $string);
+ok($string eq "Test file #3.\n");

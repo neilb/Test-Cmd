@@ -1,5 +1,17 @@
 Revision history for Perl extension Test::Cmd.
 
+1.02
+
+	- Small fix to make match() backwards compatible to Perl 5.003.
+
+	- Add diff_exact() and diff_regex() methods for returning
+	  UNIX diff(1)-like output from file comparisons.
+
+	- Accomodate $TMPDIR specifications that vary from Cwd::cwd()
+	  due to symbolic links or omission of NT drive letters.
+
+
+
 1.01  Sun Aug 27 05:40:35 CDT 2000
 
 	- Add a match_exact() method for non-regex matches.

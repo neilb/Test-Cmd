@@ -5,8 +5,11 @@ Makefile.PL
 README
 t/ENV_PRESERVE.t
 t/EXPORT_OK.t
+t/TMPDIR.t
 t/basename.t
 t/cleanup.t
+t/diff_exact.t
+t/diff_regex.t
 t/exit.t
 t/fail.t
 t/interpreter.t

@@ -1,4 +1,4 @@
-# Copyright 1999-2000 Steven Knight.  All rights reserved.  This program
+# Copyright 1999-2001 Steven Knight.  All rights reserved.  This program
 # is free software; you can redistribute it and/or modify it under the
 # same terms as Perl itself.
 #
@@ -17,9 +17,9 @@ use File::Basename ();	# don't import the basename() method, we redefine it
 use File::Find;
 use File::Spec;
 
-$VERSION = '1.01';
+$VERSION = '1.02';
 @ISA = qw(Exporter File::Spec);
-@EXPORT_OK = qw(match_exact match_regex);
+@EXPORT_OK = qw(match_exact match_regex diff_exact diff_regex);
 
 
 
@@ -97,8 +97,7 @@ Test::Cmd - Perl module for portable testing of commands and scripts
   $test->stderr;
   $test->stderr(run_number);
 
-  $test->diff();
-
+  $test->match(\@lines, \@matches);
   $test->match($lines, $matches);
 
   $test->match_exact(\@lines, \@matches);
@@ -107,12 +106,18 @@ Test::Cmd - Perl module for portable testing of commands and scripts
   $test->match_regex(\@lines, \@regexes);
   $test->match_regex($lines, $regexes);
 
+  $test->diff_exact(\@lines, \@matches, \@output);
+  $test->diff_exact($lines, $matches, \@output);
+
+  $test->diff_regex(\@lines, \@regexes, \@output);
+  $test->diff_regex($lines, $regexes, \@output);
+
   sub func {
 	my ($self, $lines, $matches) = @_;
-	# code to match $line and $matches
+	# code to match $lines and $matches
   }
   $test->match_sub(\&func);
-  $test->match_sub(sub { code to match $_[1] and $[2] });
+  $test->match_sub(sub { code to match $_[1] and $_[2] });
 
   $test->here;
 
@@ -226,35 +231,43 @@ BEGIN {
 	$iswin32 = $^O eq "MSWin32";
     }
 
+    my @tmps = ();
     if ($iswin32) {
 	eval("use Win32;");
 	$Test::Cmd::_WIN32 = 1;
 	$Test::Cmd::Temp_Prefix = "~testcmd$$-";
 	$Test::Cmd::Cwd_Ref = \&Win32::GetCwd;
-	if (! $Test::Cmd::TMPDIR) {
-	    # Test for WIN32 temporary directories.
-	    # The following is lifted from the 5.005056
-	    # version of File::Spec::Win32::tmpdir.
-	    foreach (@ENV{qw(TMPDIR TEMP TMP)}, qw(/tmp /)) {
-		next unless defined && -d;
-		$Test::Cmd::TMPDIR = $_;
-		last;
-	    }
-	}
+	# Test for WIN32 temporary directories.
+	# The following is lifted from the 5.005056
+	# version of File::Spec::Win32::tmpdir.
+	push @tmps, (@ENV{qw(TMPDIR TEMP TMP)}, qw(/tmp /));
     } else {
 	$Test::Cmd::Temp_Prefix = "testcmd$$.";
 	$Test::Cmd::Cwd_Ref = \&Cwd::cwd;
-	if (! $Test::Cmd::TMPDIR) {
-	    # Test for UNIX temporary directories.
-	    # The following is lifted from the 5.005056
-	    # version of File::Spec::Unix::tmpdir.
-	    foreach ($ENV{TMPDIR}, "/tmp") {
-		next unless defined && -d && -w _;
-		$Test::Cmd::TMPDIR = $_;
-		last;
-	    }
+	# Test for UNIX temporary directories.
+	# The following is lifted from the 5.005056
+	# version of File::Spec::Unix::tmpdir.
+	push @tmps, ($ENV{TMPDIR}, "/tmp");
+    }
+
+    if (! $Test::Cmd::TMPDIR) {
+	foreach (@tmps) {
+	    next unless defined && -d && -w;
+	    $Test::Cmd::TMPDIR = $_;
+	    last;
 	}
     }
+
+    # Get the absolute path to the temporary directory, in case
+    # the TMPDIR specification is affected by symbolic links,
+    # or by lack of a volume name on WIN32.
+    # The following better way isn't available in the Cwd module
+    # until sometime after 5.003:
+    #	$Test::Cmd::TMPDIR = Cwd::abs_path($Test::Cmd::TMPDIR);
+    my($save) = Cwd::cwd();
+    chdir($Test::Cmd::TMPDIR);
+    $Test::Cmd::TMPDIR = Cwd::cwd();
+    chdir($save);
 
     $Default = {};
 
@@ -959,13 +972,23 @@ sub stderr {
 
 
 
-=item C<diff>
-
-Not Yet Implemented.
-
-=cut
-
-sub diff {
+sub _make_arrays {
+    my ($lines, $matches) = @_;
+    my @line_array;
+    my @match_array;
+    if (ref $lines) {
+	chomp(@line_array = @$lines);
+    } else {
+	@line_array = split(/\n/, $lines, -1);
+	pop(@line_array);
+    }
+    if (ref $matches) {
+	chomp(@match_array = @$matches);
+    } else {
+	@match_array = split(/\n/, $matches, -1);
+	pop(@match_array);
+    }
+    return (\@line_array, \@match_array);
 }
 
 
@@ -980,8 +1003,30 @@ the default is to match lines against regular expressions.
 =cut
 
 sub match {
-    my ($self, $lines, $matches) = @_;
-    $self->{'match_sub'}->($self, $lines, $matches);
+    my $self = shift;
+    # We can write this more clearly when we drop support for Perl 5.003:
+    #	$self->{'match_sub'}->($self, @_);
+    &{$self->{'match_sub'}}($self, @_);
+}
+
+
+
+sub _matcher {
+    my ($lines, $matches, $sub) = @_;
+    ($lines, $matches) = _make_arrays($lines, $matches);
+    return undef if @$lines != @$matches;
+    my ($i, $l, $m);
+    for ($i = 0; $i <= $#{ $matches }; $i++) {
+	# More clearly, but doesn't work in Perl 5.003:
+	#	if (! $sub->($lines->[$i], $matches->[$i]))
+	if (! &{$sub}($lines->[$i], $matches->[$i])) {
+	    #print STDERR "Line ", $i+1, " does not match:\n";
+	    #print STDERR "Expect:  ${\$matches->[\$i]}\n";
+	    #print STDERR "Got:     ${\$lines->[\$i]}\n";
+	    return undef;
+	}
+    }
+    return 1;
 }
 
 
@@ -1000,29 +1045,7 @@ array, FALSE otherwise.
 
 sub match_exact {
     my ($self, $lines, $matches) = @_;
-    if (! ref $lines) {
-	my @line_array = split(/\n/, $lines, -1);
-	pop(@line_array);
-	$lines = \@line_array;
-    }
-    if (! ref $matches) {
-	my @match_array = split(/\n/, $matches, -1);
-	pop(@match_array);
-	$matches = \@match_array;
-    }
-    return undef if @$lines != @$matches;
-    my ($i, $l, $m);
-    for ($i = 0; $i <= $#{ $matches }; $i++) {
-	$l = $lines->[$i];
-	$m = $matches->[$i];
-	#if ($l ne $m) {
-	#	print STDERR "Line ", $i+1, " does not match:\n";
-	#	print STDERR "Expect:  $m\n";
-	#	print STDERR "Got:     $l\n";
-	#}
-	return undef if $l ne $m;
-    }
-    return 1;
+    _matcher($lines, $matches, sub {$_[0] eq $_[1]});
 }
 
 
@@ -1045,50 +1068,191 @@ otherwise.
 
 sub match_regex {
     my ($self, $lines, $regexes) = @_;
-    if (! ref $lines) {
-	my @line_array = split(/\n/, $lines, -1);
-	pop(@line_array);
-	$lines = \@line_array;
+    _matcher($lines, $regexes, sub {$_[0] =~ m/^$_[1]$/});
+}
+
+
+
+sub _range {
+    ($_[0]->[1] + 1) . ((@_ == 1) ? '' : (',' . ($_[-1]->[1] + 1)))
+}
+
+my $_differ;
+
+eval("use Algorithm::DiffOld;");
+if ($@) {
+    $_differ = \&_differ_no_lcs;
+} else {
+    $_differ = \&_differ_lcs;
+}
+
+sub _differ_lcs {
+    my ($matches, $lines, $output, $sub) = @_;
+    ($lines, $matches) = _make_arrays($lines, $matches);
+    @$output = () if defined $output;
+    my @diffs = Algorithm::DiffOld::diff($matches, $lines, $sub);
+    return 1 if @diffs == 0;
+    if (defined $output) {
+	my $added = 0;
+	my $hunk;
+	foreach $hunk (@diffs) {
+	    my @deletions = grep($_->[0] eq '-', @$hunk);
+	    my @additions = grep($_->[0] eq '+', @$hunk);
+	    if (! @deletions) {
+		push @$output, ($additions[0]->[1] - $added) . 'a' .
+			_range(@additions) . "\n";
+		push @$output, "> " .
+				join("\n> ", map($_->[2], @additions)) .
+				"\n";
+	    } elsif (! @additions) {
+		push @$output, _range(@deletions) . 'd' .
+				($deletions[0]->[1] + $added) . "\n";
+		push @$output,  "< " .
+				join("\n< ", map($_->[2], @deletions)) .
+				"\n";
+	    } else {
+		push @$output, _range(@deletions) . 'c' .
+				_range(@additions) . "\n";
+		push @$output,  "< " .
+				join("\n< ", map($_->[2], @deletions)) .
+				"\n";
+		push @$output, "---\n";
+		push @$output, "> " .
+				join("\n> ", map($_->[2], @additions)) .
+				"\n";
+	    }
+	    $added += @additions - @deletions;
+	}
     }
-    if (! ref $regexes) {
-	my @regex_array = split(/\n/, $regexes, -1);
-	pop(@regex_array);
-	$regexes = \@regex_array;
+    return undef;
+}
+
+sub _differ_no_lcs {
+    my ($matches, $lines, $output, $sub) = @_;
+    ($lines, $matches) = _make_arrays($lines, $matches);
+    @$output = () if defined $output;
+    return 1 if _matcher($matches, $lines, $sub);
+    if (defined $output) {
+	push @$output, "Expected =====\n";
+	push @$output, map { $_ . "\n" } @$matches;
+	push @$output, "Actual =====\n";
+	push @$output, map { $_ . "\n" } @$lines;
     }
-    return undef if @$lines != @$regexes;
-    my ($i, $re, $l);
-    for ($i = 0; $i <= $#{ $regexes }; $i++) {
-	chomp($l = $lines->[$i]);
-	chomp($re = $regexes->[$i]);
-	#if ($l !~ m/^$re$/) {
-	#	print STDERR "Line ", $i+1, " does not match:\n";
-	#	print STDERR "Expect:  $re\n";
-	#	print STDERR "Got:     $l\n";
-	#}
-	return undef if $l !~ m/^$re$/;
-    }
-    return 1;
+    return undef;
+}
+
+
+
+=item C<diff_exact>
+
+Diffs two arrays of lines in a manner similar to the UNIX C<diff(1)>
+utility.
+
+If the C<Algorithm::DiffOld> package is installed on the local system,
+output describing the differences between the input lines and the
+matching lines, in C<diff(1)> format, is saved to the C<$output> array
+reference.  In the diff output, the expected output lines are considered
+the "old" (left-hand) file, and the actual output is considered the
+"new" (right-hand) file.
+
+If the C<Algorithm::DiffOld> package is I<not> installed on the local
+system, the Expected and Actual contents are saved as-is to the
+C<$output> array reference.
+
+The C<lines> and C<matches> arguments are passed in as either scalars,
+in which case each is split on newline boundaries, or as array
+references.  Trailing newlines are stripped from each line and regular
+expression.
+
+Returns TRUE if each line matched its corresponding line in the expected
+matches, FALSE otherwise, in order to conform to the conventions of the
+C<match> method.
+
+Typical invocation:
+
+	if (! $test->diff_exact($test->stdout,
+				\@expected_lines,
+				\@diff)) {
+		print @diff;
+	}
+
+=cut
+
+sub diff_exact {
+    my ($self, $lines, $matches, $output) = @_;
+    return &{$_differ}($matches, $lines, $output, sub {$_[0] eq $_[1]});
+}
+
+
+
+=item C<diff_regex>
+
+Diffs one or more input lines against one or more regular expressions
+in a manner similar to the UNIX C<diff(1)> utility.
+
+If the C<Algorithm::DiffOld> package is installed on the local system,
+output describing the differences between the input lines and the
+matching lines, in C<diff(1)> format, is saved to the C<$output> array
+reference.  In the diff output, the expected output lines are considered
+the "old" (left-hand) file, and the actual output is considered the
+"new" (right-hand) file.
+
+If the C<Algorithm::DiffOld> package is I<not> installed on the local
+system, the Expected and Actual contents are saved as-is to the
+C<$output> array reference.
+
+The C<lines> and C<regexes> arguments are passed in as either scalars,
+in which case each is split on newline boundaries, or as array
+references.  Trailing newlines are stripped from each line and regular
+expression.  Comparison is performed for each entire line, that is, with
+each regular expression anchored at both the start of line (^) and end
+of line ($).
+
+Returns TRUE if each line matched each regular expression, FALSE
+otherwise, in order to conform to the conventions of the C<match>
+method.
+
+Typical invocation:
+
+	if (! $test->diff_regex($test->stdout,
+				\@expected_lines,
+				\@diff)) {
+		print @diff;
+	}
+
+=cut
+
+sub diff_regex {
+    my ($self, $lines, $regexes, $output) = @_;
+    return &{$_differ}($regexes, $lines, $output, sub {$_[1] =~ /^$_[0]$/});
 }
 
 
 
 =item C<match_sub>
 
-Registers the specified code reference as the line-matching function to
-be called by the C<match> method.  This can be a user-supplied subroutine,
-or the C<match_exact> or C<match_regex> methods supplied by the
-C<Test::Cmd> module:
+Registers the specified code reference as the line-matching function
+to be called by the C<match> method.  This can be a user-supplied
+subroutine, or the C<match_exact>, C<match_regex>, C<diff_exact>, or
+C<diff_regex> methods supplied by the C<Test::Cmd> module:
 
 	$test->match_sub(\&Test::Cmd::match_exact);
 
 	$test->match_sub(\&Test::Cmd::match_regex);
 
-The C<match_exact> and C<match_regex> subroutine names are exportable from
-the C<Test::Cmd> module, and may be specified at object initialization:
+	$test->match_sub(\&Test::Cmd::diff_exact);
 
-	use Test::Cmd qw(match_exact match_regex);
+	$test->match_sub(\&Test::Cmd::diff_regex);
+
+The C<match_exact>, C<match_regex>, C<diff_exact> and C<diff_regex>
+subroutine names are exportable from the C<Test::Cmd> module, and may be
+specified at object initialization:
+
+	use Test::Cmd qw(match_exact match_regex diff_exact diff_regex);
 	$test_exact = Test::Cmd->new(match_sub => \&match_exact);
 	$test_regex = Test::Cmd->new(match_sub => \&match_regex);
+	$test_exact = Test::Cmd->new(match_sub => \&diff_exact);
+	$test_regex = Test::Cmd->new(match_sub => \&diff_regex);
 
 =cut
 
@@ -1273,11 +1437,21 @@ Addtional hints on writing portable tests are welcome.
 
 =head1 SEE ALSO
 
-perl(1), File::Find(3), File::Spec(3), Test(3), Test::Harness(3).
+perl(1), Algorithm::DiffOld(3), File::Find(3), File::Spec(3), Test(3),
+Test::Harness(3).
 
 A rudimentary page for the Test::Cmd module is available at:
 
 	http://www.baldmt.com/Test-Cmd/
+
+The most involved example of using the Test::Cmd package to test a
+real-world application is the C<cons-test> testing suite for the
+Cons software construction utility.  The suite sub-classes Test::Cmd
+to provide common, application-specific infrastructure across a
+large number of end-to-end application tests.  The suite, and other
+information about Cons, is available at:
+
+	http://www.dsmit.com/cons
 
 =head1 AUTHORS
 
@@ -1285,7 +1459,7 @@ Steven Knight, knight@baldmt.com
 
 =head1 COPYRIGHT
 
-Copyright 1999-2000 Steven Knight.  All rights reserved.  This program
+Copyright 1999-2001 Steven Knight.  All rights reserved.  This program
 is free software; you can redistribute it and/or modify it under the
 same terms as Perl itself.
 

@@ -1,4 +1,4 @@
-# Copyright 1999-2000 Steven Knight.  All rights reserved.  This program
+# Copyright 1999-2001 Steven Knight.  All rights reserved.  This program
 # is free software; you can redistribute it and/or modify it under the
 # same terms as Perl itself.
 use ExtUtils::MakeMaker;
