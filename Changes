@@ -1,5 +1,15 @@
 Revision history for Perl extension Test::Cmd.
 
+1.04	Sat Jun 16 13:28:17 CDT 2001
+
+	- If the run() method is given an explicit 'prog' argument,
+	  don't use the test environment's 'interpreter' attribute to run
+	  it.  This loses if you're trying to run some other executable
+	  that isn't in the same scripting language as the program under
+	  test.
+
+
+
 1.03	Sat Jun  9 16:57:16 CDT 2001
 
 	- Make specification of an 'interpreter' to the run() method

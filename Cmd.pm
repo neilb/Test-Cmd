@@ -17,7 +17,7 @@ use File::Basename ();	# don't import the basename() method, we redefine it
 use File::Find;
 use File::Spec;
 
-$VERSION = '1.03';
+$VERSION = '1.04';
 @ISA = qw(Exporter File::Spec);
 @EXPORT_OK = qw(match_exact match_regex diff_exact diff_regex);
 
@@ -776,13 +776,14 @@ sub run {
 	    $args{'prog'} = $self->catfile($self->{'cwd'}, $args{'prog'});
 	}
 	$cmd = $args{'prog'};
+	$cmd = $args{'interpreter'}." ".$cmd if $args{'interpreter'};
     } else {
 	$cmd = $self->{'prog'};
-    }
-    if ($args{'interpreter'}) {
-	$cmd = $args{'interpreter'}." ".$cmd;
-    } elsif ($self->{'interpreter'}) {
-	$cmd = $self->{'interpreter'}." ".$cmd;
+	if ($args{'interpreter'}) {
+	    $cmd = $args{'interpreter'}." ".$cmd;
+	} elsif ($self->{'interpreter'}) {
+	    $cmd = $self->{'interpreter'}." ".$cmd;
+	}
     }
     $cmd = $cmd." ".$args{'args'} if $args{'args'};
     $cmd =~ s/\$work/$self->{'workdir'}/g;
