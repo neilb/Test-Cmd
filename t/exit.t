@@ -1,10 +1,8 @@
-# Before `make install' is performed this script should be runnable with
-# `make test'. After `make install' it should work as `perl test.pl'
+# Copyright 1999-2000 Steven Knight.  All rights reserved.  This program
+# is free software; you can redistribute it and/or modify it under the
+# same terms as Perl itself.
 
 ######################### We start with some black magic to print on failure.
-
-# Change 1..1 below to 1..last_test_to_print .
-# (It may become useful if the test is moved to ./t subdirectory.)
 
 use Test;
 BEGIN { $| = 1; plan tests => 19, onfail => sub { $? = 1 if $ENV{AEGIS_TEST} } }
@@ -18,10 +16,6 @@ ok(1);
 $here = Test::Cmd->here();
 my @I_FLAGS = map(Test::Cmd->file_name_is_absolute($_) ? "-I$_" :
 			"-I".Test::Cmd->catfile($here, $_), @INC);
-
-# Insert your test code below (better if it prints "ok 13"
-# (correspondingly "not ok 13") depending on the success of chunk 13
-# of the test code):
 
 my($run_env, $wdir, $ret, $test, $wd, $string);
 
@@ -38,18 +32,18 @@ my @cleanup;
 
 END {
     foreach my $dir (@cleanup) {
-    	rmdir $dir if -d $dir;
+	rmdir $dir if -d $dir;
     }
 }
 
 sub contents {
     my $file = shift;
     if (! open(FILE, $file)) {
-    	return undef;
+	return undef;
     }
     my $string = join('', <FILE>);
     if (! close(FILE)) {
-    	return undef;
+	return undef;
     }
     return $string;
 }
@@ -58,26 +52,26 @@ sub test_it {
     my($condition, $preserved) = @_;
 
     my %close_true = (
-    	'pass'		=> 1,
-    	'fail'		=> 0,
-    	'no_result'	=> 0,
+	'pass'		=> 1,
+	'fail'		=> 0,
+	'no_result'	=> 0,
     );
 
     my %exit_status = (
-    	'pass'		=> 0,
-    	'fail'		=> 1,
-    	'no_result'	=> 2,
+	'pass'		=> 0,
+	'fail'		=> 1,
+	'no_result'	=> 2,
     );
 
     my %result_string = (
-    	'pass'		=> "PASSED\n",
-    	'fail'		=> "FAILED test at line 5 of -.\n",
-    	'no_result'	=> "NO RESULT for test at line 5 of -.\n",
+	'pass'		=> "PASSED\n",
+	'fail'		=> "FAILED test at line 5 of -.\n",
+	'no_result'	=> "NO RESULT for test at line 5 of -.\n",
     );
 
     if (! open(PERL, "|$^X @I_FLAGS >perl.stdout 2>perl.stderr")) {
-    	print STDOUT "# Could not open $^X: $!\n";
-    	return undef;
+	print STDOUT "# Could not open $^X: $!\n";
+	return undef;
     }
 
 
@@ -89,39 +83,39 @@ print STDOUT \$test->workdir;
 \$test->$condition;
 EOF
     if (! $ret) {
-    	print STDOUT "# Could not write to $^X: $!\n";
-    	return undef;
+	print STDOUT "# Could not write to $^X: $!\n";
+	return undef;
     }
 
     $ret = close(PERL);
     if ($close_true{$condition} ? ! $ret : $ret) {
-    	print STDOUT "# Unexpected return from close(): $!\n";
+	print STDOUT "# Unexpected return from close(): $!\n";
 	$wd = contents("perl.stdout");
 	push @cleanup, $wd if defined $wd;
-    	return undef;
+	return undef;
     }
 
     if (($?>>8) != $exit_status{$condition}) {
-    	print STDOUT "# Expected exit status ", $exit_status{$condition}, " got ", $?>>8, "\n";
+	print STDOUT "# Expected exit status ", $exit_status{$condition}, " got ", $?>>8, "\n";
 	$wd = contents("perl.stdout");
 	push @cleanup, $wd if defined $wd;
-    	return undef;
+	return undef;
     }
 
     $wd = contents("perl.stdout");
     if (! defined $wd) {
-    	print STDOUT "# no working directory path name on standard output\n";
-    	return undef;
+	print STDOUT "# no working directory path name on standard output\n";
+	return undef;
     }
     push @cleanup, $wd;
 
     $string = contents("perl.stderr");
     if ($string ne $result_string{$condition}) {
-    	print STDOUT "# Expected error output:\n";
+	print STDOUT "# Expected error output:\n";
 	print STDOUT "# ", $result_string{$condition};
 	print STDOUT "# Got error output:\n";
 	print STDOUT "# ", $string;
-    	return undef;
+	return undef;
     }
 
     return ($preserved ? -d $wd : ! -d $wd);

@@ -1,3 +1,6 @@
+# Copyright 1999-2000 Steven Knight.  All rights reserved.  This program
+# is free software; you can redistribute it and/or modify it under the
+# same terms as Perl itself.
 use ExtUtils::MakeMaker;
 # See lib/ExtUtils/MakeMaker.pm for details of how to influence
 # the contents of the Makefile that is written.
@@ -24,6 +27,6 @@ WriteMakefile(
     'NAME'	=> 'Test::Cmd',
     'VERSION_FROM' => 'Cmd.pm', # finds $VERSION
     'PM'	=> {
-    			'Cmd.pm'	=> '$(INST_LIBDIR)/Cmd.pm'
-    		},
+			'Cmd.pm'	=> '$(INST_LIBDIR)/Cmd.pm'
+		},
 );

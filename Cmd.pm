@@ -1,3 +1,7 @@
+# Copyright 1999-2000 Steven Knight.  All rights reserved.  This program
+# is free software; you can redistribute it and/or modify it under the
+# same terms as Perl itself.
+#
 # This package tests an executable program or script,
 # managing one or more temporary working directories,
 # keeping track of standard and error output,
@@ -12,7 +16,7 @@ use File::Basename ();	# don't import the basename() method, we redefine it
 use File::Find;
 use File::Spec;
 
-$VERSION = '0.04';
+$VERSION = '1.00';
 @ISA = qw(File::Spec);
 
 
@@ -68,7 +72,7 @@ Test::Cmd - Perl module for portable testing of commands and scripts
   $test->cleanup(condition);
 
   $test->run(prog => 'program_or_script_to_test',
-  		interpreter => 'script_interpreter',
+		interpreter => 'script_interpreter',
 		chdir => 'dir', args => 'arguments', stdin => <<'EOF');
   input to program
   EOF
@@ -239,22 +243,23 @@ BEGIN {
 
     $Default = {};
 
-    $Default->{failed} = 0;
-    $Default->{verbose} = $ENV{VERBOSE} || 0;
+    $Default->{'failed'} = 0;
+    $Default->{'verbose'} = $ENV{VERBOSE} || 0;
 
     if (defined $ENV{PRESERVE}) {
-	$Default->{preserve}->{fail} = $ENV{PRESERVE} || 0;
-	$Default->{preserve}->{pass} = $ENV{PRESERVE} || 0;
-	$Default->{preserve}->{no_result} = $ENV{PRESERVE} || 0;
+	$Default->{'preserve'}->{'fail'} = $ENV{PRESERVE} || 0;
+	$Default->{'preserve'}->{'pass'} = $ENV{PRESERVE} || 0;
+	$Default->{'preserve'}->{'no_result'} = $ENV{PRESERVE} || 0;
     } else {
-	$Default->{preserve}->{fail} = $ENV{PRESERVE_FAIL} || 0;
-	$Default->{preserve}->{pass} = $ENV{PRESERVE_PASS} || 0;
-	$Default->{preserve}->{no_result} = $ENV{PRESERVE_NO_RESULT} || 0;
+	$Default->{'preserve'}->{'fail'} = $ENV{PRESERVE_FAIL} || 0;
+	$Default->{'preserve'}->{'pass'} = $ENV{PRESERVE_PASS} || 0;
+	$Default->{'preserve'}->{'no_result'} = $ENV{PRESERVE_NO_RESULT} || 0;
     }
 
     sub handler {
 	print STDERR "NO RESULT -- SIG$_ received.\n";
-	foreach my $test (@Cleanup) {
+	my $test;
+	foreach $test (@Cleanup) {
 	    $test->cleanup('no_result');
 	}
 	exit(2);
@@ -268,7 +273,8 @@ BEGIN {
 
 END {
     my $cond = @Cond[$?] || 'no_result';
-    foreach my $test (@Cleanup) {
+    my $test;
+    foreach $test (@Cleanup) {
 	$test->cleanup($cond);
     }
 }
@@ -291,12 +297,12 @@ sub new {
 
     %$self = %$Default;
 
-    $self->{cleanup} = [];
+    $self->{'cleanup'} = [];
 
-    $self->{preserve} = {};
-    %{$self->{preserve}} = %{$Default->{preserve}};
+    $self->{'preserve'} = {};
+    %{$self->{'preserve'}} = %{$Default->{'preserve'}};
 
-    $self->{cwd} = cwd(); 
+    $self->{'cwd'} = cwd();
 
     while (@_) {
 	my $keyword = shift;
@@ -305,18 +311,18 @@ sub new {
 
     bless $self, $type;
 
-    if (defined $self->{workdir}) {
-	if (! $self->workdir($self->{workdir})) {
+    if (defined $self->{'workdir'}) {
+	if (! $self->workdir($self->{'workdir'})) {
 	    return undef;
 	}
     }
-    if (defined $self->{subdir}) {
-	if (! $self->subdir($self->{subdir})) {
+    if (defined $self->{'subdir'}) {
+	if (! $self->subdir($self->{'subdir'})) {
 	    return undef;
 	}
     }
 
-    $self->prog($self->{prog});
+    $self->prog($self->{'prog'});
 
     push @Cleanup, $self;
 
@@ -333,7 +339,7 @@ Sets the verbose level for the environment object to the specified value.
 
 sub verbose {
     my $self = shift;
-    $self->{verbose} = $_;
+    $self->{'verbose'} = $_;
 }
 
 
@@ -350,11 +356,11 @@ sub prog {
     if ($prog) {
 	# make sure we're always talking about the same program
 	if (! $self->file_name_is_absolute($prog)) {
-	    $prog = $self->catfile($self->{cwd}, $prog);
+	    $prog = $self->catfile($self->{'cwd'}, $prog);
 	}
-	$self->{prog} = $prog;
+	$self->{'prog'} = $prog;
     }
-    return $self->{prog};
+    return $self->{'prog'};
 }
 
 
@@ -369,8 +375,8 @@ basename.
 
 sub basename {
     my $self = shift;
-    return undef if ! $self->{prog};
-    File::Basename::basename($self->{prog}, @_);
+    return undef if ! $self->{'prog'};
+    File::Basename::basename($self->{'prog'}, @_);
 }
 
 
@@ -384,8 +390,8 @@ Returns the current value of C<interpreter>.
 
 sub interpreter {
     my ($self, $interpreter) = @_;
-    $self->{interpreter} = $interpreter if $interpreter;
-    $self->{interpreter};
+    $self->{'interpreter'} = $interpreter if $interpreter;
+    $self->{'interpreter'};
 }
 
 
@@ -399,8 +405,8 @@ printed on failure or no result.
 
 sub string {
     my ($self, $string) = @_;
-    $self->{string} = $string if $string;
-    $self->{string};
+    $self->{'string'} = $string if $string;
+    $self->{'string'};
 }
 
 
@@ -432,15 +438,15 @@ FALSE if the directory could not be created.
 sub workdir {
     my ($self, $workdir) = @_;
     if (defined($workdir)) {
-#	return if $workdir && $self->{workdir} eq $workdir;	# no change
+#	return if $workdir && $self->{'workdir'} eq $workdir;	# no change
 	my $wdir = $workdir || $self->_workdir_name;
 	if (!mkdir($wdir, 0755)) {
 	    return undef;
 	}
-	$self->{workdir} = $wdir;
-	push(@{$self->{cleanup}}, $self->{workdir});
+	$self->{'workdir'} = $wdir;
+	push(@{$self->{'cleanup'}}, $self->{'workdir'});
     }
-    $self->{workdir};
+    $self->{'workdir'};
 }
 
 
@@ -455,8 +461,8 @@ working directory name with the specified arguments.
 
 sub workpath {
     my $self = shift;
-    return undef if ! $self->{workdir};
-    $self->catfile($self->{workdir}, @_);
+    return undef if ! $self->{'workdir'};
+    $self->catfile($self->{'workdir'}, @_);
 }
 
 
@@ -479,7 +485,7 @@ sub subdir {
     my $self = shift;
     my $count = 0;
     foreach (@_) {
-	my $newdir = $self->catfile($self->{workdir}, ref $_ ? @$_ : $_);
+	my $newdir = $self->catfile($self->{'workdir'}, ref $_ ? @$_ : $_);
 	if (mkdir($newdir, 0755)) {
 	    $count++;
 	}
@@ -503,7 +509,7 @@ sub write {
     my $self = shift;
     my $file = shift; # the file to write to
     if (! $self->file_name_is_absolute($file)) {
-	$file = $self->catfile($self->{workdir}, ref $file ? @$file : $file);
+	$file = $self->catfile($self->{'workdir'}, ref $file ? @$file : $file);
     }
     if (! open(OUT, ">$file")) {
 	return undef;
@@ -534,7 +540,7 @@ sub read {
     my ($self, $destref, $file) = @_;
     return undef if ref $destref ne 'SCALAR' && ref $destref ne 'ARRAY';
     if (! $self->file_name_is_absolute($file)) {
-	$file = $self->catfile($self->{workdir}, ref $file ? @$file : $file);
+	$file = $self->catfile($self->{'workdir'}, ref $file ? @$file : $file);
     }
     if (! open(IN, "<$file")) {
 	return undef;
@@ -595,8 +601,9 @@ directories to be preserved for all conditions.
 sub preserve {
     my $self = shift;
     my @cond = (@_) ? @_ : qw(pass fail no_result);
-    foreach my $cond (@cond) {
-	$self->{preserve}->{$cond} = 1;
+    my $cond;
+    foreach $cond (@cond) {
+	$self->{'preserve'}->{$cond} = 1;
     }
 }
 
@@ -632,18 +639,19 @@ for the exit status.
 
 sub cleanup {
     my ($self, $cond) = @_;
-    $cond = (($self->{failed} == 0) ? 'pass' : 'fail') if !$cond;
-    if ($self->{preserve}->{$cond}) {
-	print STDERR "Preserving work directory ".$self->{workdir}."\n" if $self->{verbose};
+    $cond = (($self->{'failed'} == 0) ? 'pass' : 'fail') if !$cond;
+    if ($self->{'preserve'}->{$cond}) {
+	print STDERR "Preserving work directory ".$self->{'workdir'}."\n" if $self->{'verbose'};
 	return;
     }
-    chdir $self->{cwd}; # cd out of whatever work dir we're in
-    foreach my $dir (@{$self->{cleanup}}) {
+    chdir $self->{'cwd'}; # cd out of whatever work dir we're in
+    my $dir;
+    foreach $dir (@{$self->{'cleanup'}}) {
 	$self->writable($dir, "true");
 	finddepth(\&_nuke, $dir);
 	rmdir($dir);
     }
-    $self->{cleanup} = [];
+    $self->{'cleanup'} = [];
 }
 
 
@@ -712,13 +720,13 @@ sub run {
     my $self = shift;
     my %args = @_;
     my $oldcwd;
-    if ($args{chdir}) {
+    if ($args{'chdir'}) {
 	$oldcwd = Cwd::cwd();
-	if (! $self->file_name_is_absolute($args{chdir})) {
-	    $args{chdir} = $self->catfile($self->{workdir}, $args{chdir});
+	if (! $self->file_name_is_absolute($args{'chdir'})) {
+	    $args{'chdir'} = $self->catfile($self->{'workdir'}, $args{'chdir'});
 	}
-	print STDERR "Changing to $args{chdir}\n" if $self->{verbose};
-	if (!chdir $args{chdir}) {
+	print STDERR "Changing to $args{'chdir'}\n" if $self->{'verbose'};
+	if (!chdir $args{'chdir'}) {
 	    return undef;
 	}
     }
@@ -726,27 +734,27 @@ sub run {
     my $stdout_file = $self->_stdout_file($Run_Count);
     my $stderr_file = $self->_stderr_file($Run_Count);
     my $cmd;
-    if ($args{prog}) {
-	if (! $self->file_name_is_absolute($args{prog})) {
-	    $args{prog} = $self->catfile($self->{cwd}, $args{prog});
+    if ($args{'prog'}) {
+	if (! $self->file_name_is_absolute($args{'prog'})) {
+	    $args{'prog'} = $self->catfile($self->{'cwd'}, $args{'prog'});
 	}
-	$cmd = $args{prog};
-	$cmd = $args{interpreter}." ".$cmd if $args{interpreter};
+	$cmd = $args{'prog'};
+	$cmd = $args{'interpreter'}." ".$cmd if $args{'interpreter'};
     } else {
-	$cmd = $self->{prog};
-	$cmd = $self->{interpreter}." ".$cmd if $self->{interpreter};
+	$cmd = $self->{'prog'};
+	$cmd = $self->{'interpreter'}." ".$cmd if $self->{'interpreter'};
     }
-    $cmd = $cmd." ".$args{args} if $args{args};
-    $cmd =~ s/\$work/$self->{workdir}/g;
+    $cmd = $cmd." ".$args{'args'} if $args{'args'};
+    $cmd =~ s/\$work/$self->{'workdir'}/g;
     $cmd = "|$cmd 1>$stdout_file 2>$stderr_file";
-    print STDERR "Invoking $cmd\n" if $self->{verbose};
+    print STDERR "Invoking $cmd\n" if $self->{'verbose'};
     if (! open(RUN, $cmd)) {
 	$? = 2;
 	print STDERR "Could not invoke $cmd: $!\n";
 	return undef;
     }
-    if ($args{stdin}) {
-	print RUN ref $args{stdin} ? @{$args{stdin}} : $args{stdin};
+    if ($args{'stdin'}) {
+	print RUN ref $args{'stdin'} ? @{$args{'stdin'}} : $args{'stdin'};
     }
     close(RUN);
     my $return = $?;
@@ -758,7 +766,7 @@ sub run {
 
 sub _to_value {
     my ($v) = @_;
-    (ref $v or '') eq 'CODE' ? $v->() : $v;
+    (ref $v or '') eq 'CODE' ? &$v() : $v;
 }
 
 
@@ -808,8 +816,8 @@ sub fail {
 	my $basename = $self->basename;
 	if ($basename) {
 	    $of_str = " of ".$self->basename;
-	    if ($self->{string}) {
-		$of_str .= " [".$self->{string}."]";
+	    if ($self->{'string'}) {
+		$of_str .= " [".$self->{'string'}."]";
 	    }
 	    $of_str .= "\n\t";
 	}
@@ -853,8 +861,8 @@ sub no_result {
 	my $basename = $self->basename;
 	if ($basename) {
 	    $of_str = " of ".$self->basename;
-	    if ($self->{string}) {
-		$of_str .= " [".$self->{string}."]";
+	    if ($self->{'string'}) {
+		$of_str .= " [".$self->{'string'}."]";
 	    }
 	    $of_str .= "\n\t";
 	}
@@ -875,12 +883,12 @@ sub no_result {
 
 sub _stdout_file {
     my ($self, $count) = @_;
-    $self->catfile($self->{workdir}, "stdout.$count");
+    $self->catfile($self->{'workdir'}, "stdout.$count");
 }
 
 sub _stderr_file {
     my ($self, $count) = @_;
-    $self->catfile($self->{workdir}, "stderr.$count");
+    $self->catfile($self->{'workdir'}, "stderr.$count");
 }
 
 
@@ -1143,13 +1151,13 @@ executable.  (Since you're writing your test in Perl, it's safe to assume
 that Perl itself is executable.)
 
 If you must generate a directly-executable script, then use the
-C<$Config{startperl}> variable at the start of the script to generate
+C<$Config{'startperl'}> variable at the start of the script to generate
 the appropriate magic that will execute it as a Perl script:
 
 	use Config;
 	$line = "This is output from the generated perl script.";
 	$test->write('script', <<EOF);
-	$Config{startperl};
+	$Config{'startperl'};
 	print STDOUT "$line\\n";
 	EOF
 	chdir($test->workdir);
@@ -1172,6 +1180,12 @@ A rudimentary page for the Test::Cmd module is available at:
 =head1 AUTHORS
 
 Steven Knight, knight@baldmt.com
+
+=head1 COPYRIGHT
+
+Copyright 1999-2000 Steven Knight.  All rights reserved.  This program
+is free software; you can redistribute it and/or modify it under the
+same terms as Perl itself.
 
 =head1 ACKNOWLEDGEMENTS
 

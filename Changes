@@ -1,8 +1,17 @@
 Revision history for Perl extension Test::Cmd.
 
-0.04  Tue Feb  1 05:20:19 CST 2000
+0.05
 
-	- Development begun.
+	- White space cleanup.
+
+	- Small fixes for Perl 5.003:  put quotes around hash index
+	  strings; don't use "my" on the same line as "foreach".
+
+	- Add copyright statements to appropriate files.
+
+
+
+0.04  Tue Feb  1 05:20:19 CST 2000
 
 	- Removed unnecessary t0001a.pl file (internal testing glue
 	  for the change management system).
@@ -24,8 +33,6 @@ Revision history for Perl extension Test::Cmd.
 
 
 0.03  Wed Jan 12 18:02:38 CST 2000
-
-	- Development begun.
 
 	- Minor white space cleanup.
 
