@@ -1,0 +1,100 @@
+THE Test::Cmd MODULE
+
+The Test::Cmd module provides a framework for portable automated testing
+of executable commands and scripts, especially commands and scripts that
+require file system interaction.  This module is not restricted to testing
+Perl scripts; the command or script to be tested may be any executable or
+a script in any language, provided a means exists to execute the script
+on the local system.
+
+In addition to running tests and evaluating conditions, the Test::Cmd
+module manages and cleans up one or more temporary workspace directories,
+and provides methods for creating files and directories in those
+workspace directories from in-line data (that is, here documents).
+This allows tests to be completely self-contained.
+
+The Test::Cmd module manipulates filenames and pathnames using the
+File::Spec module to support writing tests portably across a variety of
+operating and file systems.  The Test::Cmd class is in fact a subclass
+of the File::Spec class, and File::Spec methods (File::Spec::catfile(),
+File::Spec::file_name_is_absolut(), etc.) are available through the
+Test::Cmd class and its instances.  Consequently, tests written using
+Test::Cmd need not separately import the File::Spec module.
+
+The Test::Cmd module may be used in conjunction with the Test module to
+report test results in a format suitable for the Test::Harness module.
+Alternatively, the Test::Cmd module provides pass(), fail(), and
+no_result() methods that report test results differently.  It is not a
+good idea to intermix these two reporting models.
+
+
+
+INSTALLATION
+
+Installation is via the usual incantation:
+
+	# perl Makefile.PL
+	# make
+	# make test
+	# make install
+
+Let me know if you have any problems.
+
+
+
+RESOURCES
+
+A rudimentary page for the Test::Cmd module is available at:
+
+	http://www.baldmt.com/Test-Cmd/
+
+
+
+TO DO
+
+The documentation lists a To-Be-Written Test::Cmd::diff() method
+that would be an extremely handy addition.  What I have in mind is
+to incorporate logic from Amir Karger's cdiff.pl front end to MJD's
+Algorithm::Diff module so that tests can generate diffs of actual and
+expected results without needing a diff program installed on the system.
+This is extra work to implement but makes the whole module as portable
+as possible to non-POSIX systems.
+
+The t/run.t test jumps through some complicated (but reasonably
+documented) hoops to generate an executable Perl script on Windows
+NT systems.  I have no doubt that someone with a better knowledge of NT
+than mine could do this more simply, and would love to hear of a better
+solution than what I came up with.
+
+
+
+COPYRIGHT
+
+Copyright 1999-2000 Steven Knight.  All rights reserved.  This program
+is free software; you can redistribute it and/or modify it under the
+same terms as Perl itself.
+
+
+
+ACKNOWLEDGEMENTS
+
+Thanks to Greg Spencer for the inspiration to create this package and
+the initial draft of its implementation as a specific testing package
+for the Cons software construction utility.  Information about Cons
+is available at:
+
+	http://www.dsmit.com/cons/
+
+The general idea of managing temporary working directories in this way,
+as well as the test reporting of the pass(), fail() and no_result()
+methods, come from the testing framework invented by Peter Miller for
+his Aegis project change supervisor.  Aegis is an excellent bit of work
+which integrates creation and execution of regression tests into the
+software development process.  Information about Aegis is available at:
+
+	http://www.tip.net.au/~millerp/aegis.html
+
+
+AUTHOR
+
+Steven Knight, knight@baldmt.com

@@ -1,0 +1,36 @@
+Revision history for Perl extension Test::Cmd.
+
+0.02  Mon Jan  3 23:59:53 2000
+
+	- Add a string() method to arrange for printing info about
+	  specific functionality under test upon failure or no result.
+
+	- Add a basename() method to return the basename of the
+	  program under test (the prog() method returns the full path).
+
+	- Add a workpath() method to catfile its arguments to the
+	  end of the temporary working directory; this pushes more
+	  of the OS-dependent gunk into the module.
+
+	- Allow the write() method to take an array reference as a
+	  file name argument, in which case the arguments are
+	  concatenated using File::Spec->catfile().
+
+	- Allow the subdir() method to take a array references as
+	  arguments, in which case the elements are concatenated
+	  using File::Spec->catfile().
+
+	- Change the run() method to take named-keyword arguments
+	  like $test->run(args => '1 2 3', chdir => 'sub/dir')
+	  instead of the old positional arguments.
+
+	- Add $caller arguments to the fail() and no_result()
+	  methods which specify how many levels back to print a
+	  trace of the exiting line.  This allows nested packages
+	  to get back to the original caller.
+
+
+
+0.01  Thu Nov 11 15:50:32 1999
+
+	- original version; created by h2xs 1.19
