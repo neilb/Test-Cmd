@@ -10,14 +10,16 @@
 package Test::Cmd;
 
 use strict;
-use vars qw($VERSION @ISA);
+use vars qw($VERSION @ISA @EXPORT_OK);
 use Cwd;
+use Exporter;
 use File::Basename ();	# don't import the basename() method, we redefine it
 use File::Find;
 use File::Spec;
 
-$VERSION = '1.00';
-@ISA = qw(File::Spec);
+$VERSION = '1.01';
+@ISA = qw(Exporter File::Spec);
+@EXPORT_OK = qw(match_exact match_regex);
 
 
 
@@ -34,6 +36,7 @@ Test::Cmd - Perl module for portable testing of commands and scripts
 			string => 'identifier_string',
 			workdir => '',
 			subdir => 'dir',
+			match_sub => $code_ref,
 			verbose => 1);
 
   $test->verbose(1);
@@ -96,8 +99,20 @@ Test::Cmd - Perl module for portable testing of commands and scripts
 
   $test->diff();
 
-  $test->match(\@lines, \@regexes);
-  $test->match($lines, $regexes);
+  $test->match($lines, $matches);
+
+  $test->match_exact(\@lines, \@matches);
+  $test->match_exact($lines, $matches);
+
+  $test->match_regex(\@lines, \@regexes);
+  $test->match_regex($lines, $regexes);
+
+  sub func {
+	my ($self, $lines, $matches) = @_;
+	# code to match $line and $matches
+  }
+  $test->match_sub(\&func);
+  $test->match_sub(sub { code to match $_[1] and $[2] });
 
   $test->here;
 
@@ -324,6 +339,8 @@ sub new {
 
     $self->prog($self->{'prog'});
 
+    $self->match_sub($self->{'match_sub'} || \&Test::Cmd::match_regex);
+
     push @Cleanup, $self;
 
     $self;
@@ -390,7 +407,7 @@ Returns the current value of C<interpreter>.
 
 sub interpreter {
     my ($self, $interpreter) = @_;
-    $self->{'interpreter'} = $interpreter if $interpreter;
+    $self->{'interpreter'} = $interpreter if defined $interpreter;
     $self->{'interpreter'};
 }
 
@@ -405,7 +422,7 @@ printed on failure or no result.
 
 sub string {
     my ($self, $string) = @_;
-    $self->{'string'} = $string if $string;
+    $self->{'string'} = $string if defined $string;
     $self->{'string'};
 }
 
@@ -765,7 +782,7 @@ sub run {
 
 
 sub _to_value {
-    my ($v) = @_;
+    my $v = shift;
     (ref $v or '') eq 'CODE' ? &$v() : $v;
 }
 
@@ -955,6 +972,63 @@ sub diff {
 
 =item C<match>
 
+Matches one or more input lines against an equal number of expected lines
+using the currently-registered line-matching function.  The default
+line-matching function is the C<match_regex> method, which means that
+the default is to match lines against regular expressions.
+
+=cut
+
+sub match {
+    my ($self, $lines, $matches) = @_;
+    $self->{'match_sub'}->($self, $lines, $matches);
+}
+
+
+
+=item C<match_exact>
+
+Compares two arrays of lines for exact matches.  The arguments are passed
+in as either scalars, in which case each is split on newline boundaries,
+or as array references.  An unequal number of lines in the two arrays
+fails immediately and returns FALSE before any comparisons are performed.
+
+Returns TRUE if each line matched its corresponding line in the other
+array, FALSE otherwise.
+
+=cut
+
+sub match_exact {
+    my ($self, $lines, $matches) = @_;
+    if (! ref $lines) {
+	my @line_array = split(/\n/, $lines, -1);
+	pop(@line_array);
+	$lines = \@line_array;
+    }
+    if (! ref $matches) {
+	my @match_array = split(/\n/, $matches, -1);
+	pop(@match_array);
+	$matches = \@match_array;
+    }
+    return undef if @$lines != @$matches;
+    my ($i, $l, $m);
+    for ($i = 0; $i <= $#{ $matches }; $i++) {
+	$l = $lines->[$i];
+	$m = $matches->[$i];
+	#if ($l ne $m) {
+	#	print STDERR "Line ", $i+1, " does not match:\n";
+	#	print STDERR "Expect:  $m\n";
+	#	print STDERR "Got:     $l\n";
+	#}
+	return undef if $l ne $m;
+    }
+    return 1;
+}
+
+
+
+=item C<match_regex>
+
 Matches one or more input lines against an equal number of regular
 expressions.  The arguments are passed in as either scalars, in which
 case each is split on newline boundaries, or as array references.
@@ -969,8 +1043,8 @@ otherwise.
 
 =cut
 
-sub match {
-    my($self, $lines, $regexes) = @_;
+sub match_regex {
+    my ($self, $lines, $regexes) = @_;
     if (! ref $lines) {
 	my @line_array = split(/\n/, $lines, -1);
 	pop(@line_array);
@@ -982,7 +1056,7 @@ sub match {
 	$regexes = \@regex_array;
     }
     return undef if @$lines != @$regexes;
-    my($i, $re, $l);
+    my ($i, $re, $l);
     for ($i = 0; $i <= $#{ $regexes }; $i++) {
 	chomp($l = $lines->[$i]);
 	chomp($re = $regexes->[$i]);
@@ -994,6 +1068,34 @@ sub match {
 	return undef if $l !~ m/^$re$/;
     }
     return 1;
+}
+
+
+
+=item C<match_sub>
+
+Registers the specified code reference as the line-matching function to
+be called by the C<match> method.  This can be a user-supplied subroutine,
+or the C<match_exact> or C<match_regex> methods supplied by the
+C<Test::Cmd> module:
+
+	$test->match_sub(\&Test::Cmd::match_exact);
+
+	$test->match_sub(\&Test::Cmd::match_regex);
+
+The C<match_exact> and C<match_regex> subroutine names are exportable from
+the C<Test::Cmd> module, and may be specified at object initialization:
+
+	use Test::Cmd qw(match_exact match_regex);
+	$test_exact = Test::Cmd->new(match_sub => \&match_exact);
+	$test_regex = Test::Cmd->new(match_sub => \&match_regex);
+
+=cut
+
+sub match_sub {
+    my ($self, $funcref) = @_;
+    $self->{'match_sub'} = $funcref if defined $funcref;
+    $self->{'match_sub'};
 }
 
 

@@ -1,5 +1,31 @@
 Revision history for Perl extension Test::Cmd.
 
+1.01  Sun Aug 27 05:40:35 CDT 2000
+
+	- Add a match_exact() method for non-regex matches.
+
+	- Change the name of the match() method to match_regex().
+
+	- Add a new match() method that calls a registered
+	  line-matching subroutine to do the match.  By default,
+	  this is match_regex(), so the external interface stays
+	  backwards-compatible.
+
+	- Add a match_sub() method that allows an arbitrary
+	  line-matching subroutine to be registered.
+
+	- EXPORT_OK the match_exact() and match_regex() methods
+	  to make it easier to register them.
+
+
+
+1.00
+
+	- The early versions have been out there long enough,
+	  so promote the version number to 1.00.
+
+
+
 0.05
 
 	- White space cleanup.

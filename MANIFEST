@@ -4,12 +4,16 @@ MANIFEST
 Makefile.PL
 README
 t/ENV_PRESERVE.t
+t/EXPORT_OK.t
 t/basename.t
 t/cleanup.t
 t/exit.t
 t/fail.t
 t/interpreter.t
 t/match.t
+t/match_exact.t
+t/match_regex.t
+t/match_sub.t
 t/no_result.t
 t/pass.t
 t/preserve.t
