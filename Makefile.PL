@@ -23,4 +23,7 @@ $(DISTVNAME).txt:	Cmd.pm
 WriteMakefile(
     'NAME'	=> 'Test::Cmd',
     'VERSION_FROM' => 'Cmd.pm', # finds $VERSION
+    'PM'	=> {
+    			'Cmd.pm'	=> '$(INST_LIBDIR)/Cmd.pm'
+    		},
 );

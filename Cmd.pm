@@ -12,7 +12,7 @@ use File::Basename ();	# don't import the basename() method, we redefine it
 use File::Find;
 use File::Spec;
 
-$VERSION = '0.03';
+$VERSION = '0.04';
 @ISA = qw(File::Spec);
 
 
@@ -57,9 +57,8 @@ Test::Cmd - Perl module for portable testing of commands and scripts
   EOF
 
   $test->read(\$contents, 'file');
-  $test->read(\$contents, ['subdir', 'file']);
-
   $test->read(\@lines, 'file');
+  $test->read(\$contents, ['subdir', 'file']);
   $test->read(\@lines, ['subdir', 'file']);
 
   $test->writable('dir', rwflag);
@@ -68,7 +67,11 @@ Test::Cmd - Perl module for portable testing of commands and scripts
 
   $test->cleanup(condition);
 
-  $test->run(chdir => 'dir', args => 'arguments');
+  $test->run(prog => 'program_or_script_to_test',
+  		interpreter => 'script_interpreter',
+		chdir => 'dir', args => 'arguments', stdin => <<'EOF');
+  input to program
+  EOF
 
   $test->pass(condition);
   $test->pass(condition, funcref);
@@ -81,36 +84,35 @@ Test::Cmd - Perl module for portable testing of commands and scripts
   $test->no_result(condition, funcref);
   $test->no_result(condition, funcref, caller);
 
-  $test->stdout();
+  $test->stdout;
+  $test->stdout(run_number);
 
-  $test->stderr();
+  $test->stderr;
+  $test->stderr(run_number);
 
   $test->diff();
 
-  $test->here();
+  $test->match(\@lines, \@regexes);
+  $test->match($lines, $regexes);
+
+  $test->here;
 
 =head1 DESCRIPTION
 
-The C<Test::Cmd> module provides a framework for portable automated testing
-of executable commands and scripts, especially commands and scripts that
-require file system interaction.  This module is not restricted to testing
-Perl scripts; the command or script to be tested may be any executable or
-a script in any language, provided a means exists to execute the script
-on the local system.
+The C<Test::Cmd> module provides a framework for portable automated
+testing of executable commands and scripts (in any language, not
+just Perl), especially commands and scripts that require file system
+interaction.
 
 In addition to running tests and evaluating conditions, the C<Test::Cmd>
 module manages and cleans up one or more temporary workspace directories,
-and provides methods for creating files and directories in those
-workspace directories from in-line data (that is, here documents).
-This allows tests to be completely self-contained.
+and provides methods for creating files and directories in those workspace
+directories from in-line data (that is, here-documents), allowing tests
+to be completely self-contained.
 
-The C<Test::Cmd> module manipulates filenames and pathnames using
-the C<File::Spec> module to support writing tests portably across a
-variety of operating and file systems.  The C<Test::Cmd> class is in
-fact a subclass of the C<File::Spec> class, and C<File::Spec> methods
-(C<catfile>, C<file_name_is_absolute>, etc.) are available through the
-C<Test::Cmd> class and its instances.  Consequently, tests written using
-C<Test::Cmd> need not separately import the C<File::Spec> module.
+The C<Test::Cmd> module inherits File::Spec methods
+(C<file_name_is_absolute()>, C<catfile()>, etc.) to support writing
+tests portably across a variety of operating and file systems.
 
 A C<Test::Cmd> environment object is created via the usual invocation:
 
@@ -120,15 +122,20 @@ Arguments to the C<Test::Cmd::new> method are keyword-value pairs that
 may be used to initialize the object, typically by invoking the same-named
 method as the keyword.
 
+No C<Test::Cmd> methods (including the C<new()> method) exit, die
+or throw any other sorts of exceptions (but they all do return useful
+error indications).  Exceptions should be handled by the test itself or
+a subclass specific to the program under test.
+
 The C<Test::Cmd> module may be used in conjunction with the C<Test> module
 to report test results in a format suitable for the C<Test::Harness>
 module.  A typical use would be to call the C<Test::Cmd> methods to
-prepare and execute the test, and call the C<ok> method exported by the
+prepare and execute the test, and call the C<ok()> method exported by the
 C<Test> module to test the conditions:
 
     use Test;
     use Test::Cmd;
-    BEGIN { $| = 1; plan => 2 }
+    BEGIN { $| = 1; plan => 3 }
     $test = Test::Cmd->new(prog => 'test_program', workdir => '');
     ok($test);
     $wrote_file = $test->write('input_file', <<'EOF');
@@ -140,13 +147,14 @@ C<Test> module to test the conditions:
     $test->run(args => 'input_file');
     ok($? == 0);
 
-Alternatively, the C<Test::Cmd> module provides C<pass>, C<fail>, and
-C<no_result> methods that report test results differently.  These methods
-terminate the test immediately, reporting PASSED, FAILED, or NO RESULT
-respectively, and exiting with status 0 (success), 1 or 2 respectively.
-This allows for a distinction between an actual failed test and a test
-that could not be properly evaluated because of an external condition
-(such as a full file system or incorrect permissions):
+Alternatively, the C<Test::Cmd> module provides C<pass()>, C<fail()>,
+and C<no_result()> methods that report test results for use with the Aegis
+change management system.  These methods terminate the test immediately,
+reporting PASSED, FAILED, or NO RESULT respectively, and exiting with
+status 0 (success), 1 or 2 respectively.  This allows for a distinction
+between an actual failed test and a test that could not be properly
+evaluated because of an external condition (such as a full file system
+or incorrect permissions):
 
     use Test::Cmd;
     $test = Test::Cmd->new(prog => 'test_program', workdir => '');
@@ -269,17 +277,17 @@ END {
 
 =item C<new>
 
-Create a new C<Test::Cmd> environment.
-Arguments with which to initialize the environment
-are passed in as keyword-value pairs.
+Create a new C<Test::Cmd> environment.  Arguments with which to initialize
+the environment are passed in as keyword-value pairs.  Fails if a
+specified temporary working directory or subdirectory cannot be created.
+Does NOT die or exit on failure, but returns FALSE if the test environment
+object cannot be created.
 
 =cut
 
 sub new {
     my $type = shift;
     my $self = {};
-
-    bless $self, $type;
 
     %$self = %$Default;
 
@@ -295,9 +303,20 @@ sub new {
 	$self->{$keyword} = shift;
     }
 
-    $self->workdir($self->{workdir});
+    bless $self, $type;
+
+    if (defined $self->{workdir}) {
+	if (! $self->workdir($self->{workdir})) {
+	    return undef;
+	}
+    }
+    if (defined $self->{subdir}) {
+	if (! $self->subdir($self->{subdir})) {
+	    return undef;
+	}
+    }
+
     $self->prog($self->{prog});
-    $self->subdir($self->{subdir}) if $self->{subdir};
 
     push @Cleanup, $self;
 
@@ -405,7 +424,8 @@ with the specified name.  If the argument is a NULL string (''),
 the directory is named C<testcmd> by default, followed by the
 unique ID of the executing process.
 
-Returns the pathname to the temporary working directory.
+Returns the absolute pathname to the temporary working directory, or
+FALSE if the directory could not be created.
 
 =cut
 
@@ -413,10 +433,11 @@ sub workdir {
     my ($self, $workdir) = @_;
     if (defined($workdir)) {
 #	return if $workdir && $self->{workdir} eq $workdir;	# no change
-	$self->{workdir} = $workdir ? $workdir : $self->_workdir_name;
-	if (!mkdir($self->{workdir}, 0755)) {
-	    $self->no_result("Unable to create work directory '$self->{workdir}': $!\n");
+	my $wdir = $workdir || $self->_workdir_name;
+	if (!mkdir($wdir, 0755)) {
+	    return undef;
 	}
+	$self->{workdir} = $wdir;
 	push(@{$self->{cleanup}}, $self->{workdir});
     }
     $self->{workdir};
@@ -661,45 +682,74 @@ directory, you must specify an explicit C<chdir> to the current directory:
 
 	$test->run(chdir => $test->curdir);	# portable
 
+=item C<interpreter>
+
+Specifies the program to be used to interpret C<prog> as a script,
+for this run only.  This does not change the C<$test-&>interpreter>
+value of the test environment.
+
+=item C<prog>
+
+Specifies the executable program or script to be run, for this run only.
+This does not change the C<$test-&>prog> value of the test environment.
+
+=item C<stdin>
+
+Pipes the specified value (string or array ref) to the program
+or script under test for this run:
+
+	$test->run(stdin => <<_EOF_);
+	input to the program under test
+	_EOF_
+
 =back
 
-Returns the return value from the system() call used to invoke the
-program or script.
+Returns the exit status of the program or script.
 
 =cut
 
 sub run {
     my $self = shift;
-    my($args, $subdir);
-    while (@_) {
-	my($key, $val) = splice(@_, 0, 2);
-	if ($key eq 'args') {
-		$args = $val;
-	} elsif ($key eq 'chdir') {
-		$subdir = $val;
-	}
-    }
+    my %args = @_;
     my $oldcwd;
-    if ($subdir) {
+    if ($args{chdir}) {
 	$oldcwd = Cwd::cwd();
-	if (! $self->file_name_is_absolute($subdir)) {
-	    $subdir = $self->catfile($self->{workdir}, $subdir);
+	if (! $self->file_name_is_absolute($args{chdir})) {
+	    $args{chdir} = $self->catfile($self->{workdir}, $args{chdir});
 	}
-	print STDERR "Changing to $subdir\n" if $self->{verbose};
-	if (!chdir $subdir) {
-	    $self->no_result("run: unable to chdir to $subdir: $!\n");
+	print STDERR "Changing to $args{chdir}\n" if $self->{verbose};
+	if (!chdir $args{chdir}) {
+	    return undef;
 	}
     }
     $Run_Count++;
     my $stdout_file = $self->_stdout_file($Run_Count);
     my $stderr_file = $self->_stderr_file($Run_Count);
-    my $cmd = $self->{prog};
-    $cmd = $cmd." ".$args if $args;
-    $cmd = $self->{interpreter}." ".$cmd if $self->{interpreter};
+    my $cmd;
+    if ($args{prog}) {
+	if (! $self->file_name_is_absolute($args{prog})) {
+	    $args{prog} = $self->catfile($self->{cwd}, $args{prog});
+	}
+	$cmd = $args{prog};
+	$cmd = $args{interpreter}." ".$cmd if $args{interpreter};
+    } else {
+	$cmd = $self->{prog};
+	$cmd = $self->{interpreter}." ".$cmd if $self->{interpreter};
+    }
+    $cmd = $cmd." ".$args{args} if $args{args};
     $cmd =~ s/\$work/$self->{workdir}/g;
-    $cmd = "$cmd 1>$stdout_file 2>$stderr_file";
+    $cmd = "|$cmd 1>$stdout_file 2>$stderr_file";
     print STDERR "Invoking $cmd\n" if $self->{verbose};
-    my $return = system($cmd);
+    if (! open(RUN, $cmd)) {
+	$? = 2;
+	print STDERR "Could not invoke $cmd: $!\n";
+	return undef;
+    }
+    if ($args{stdin}) {
+	print RUN ref $args{stdin} ? @{$args{stdin}} : $args{stdin};
+    }
+    close(RUN);
+    my $return = $?;
     chdir $oldcwd if $oldcwd;
     return $return;
 }
@@ -753,19 +803,20 @@ sub fail {
     return if ! _to_value($cond);
     &$funcref() if $funcref;
     $caller = 0 if ! defined($caller);
-    my $of_str = "";
+    my $of_str = " ";
     if (ref $self) {
 	my $basename = $self->basename;
 	if ($basename) {
 	    $of_str = " of ".$self->basename;
 	    if ($self->{string}) {
-		$of_str .= " [$self->{string}]";
+		$of_str .= " [".$self->{string}."]";
 	    }
+	    $of_str .= "\n\t";
 	}
     }
     my $c = 0;
     my ($pkg,$file,$line,$sub) = caller($c++);
-    print STDERR "FAILED test$of_str at line $line of $file";
+    print STDERR "FAILED test${of_str}at line $line of $file";
     while ($c <= $caller) {
 	    ($pkg,$file,$line,$sub) = caller($c++);
 	    print STDERR " ($sub)\n\tfrom line $line of $file";
@@ -797,19 +848,20 @@ sub no_result {
     return if ! _to_value($cond);
     &$funcref() if $funcref;
     $caller = 0 if ! defined($caller);
-    my $of_str = "";
+    my $of_str = " ";
     if (ref $self) {
 	my $basename = $self->basename;
 	if ($basename) {
 	    $of_str = " of ".$self->basename;
 	    if ($self->{string}) {
-		$of_str .= " [$self->{string}]";
+		$of_str .= " [".$self->{string}."]";
 	    }
+	    $of_str .= "\n\t";
 	}
     }
     my $c = 0;
     my ($pkg,$file,$line,$sub) = caller($c++);
-    print STDERR "NO RESULT for test$of_str at line $line of $file";
+    print STDERR "NO RESULT for test${of_str}at line $line of $file";
     while ($c <= $caller) {
 	    ($pkg,$file,$line,$sub) = caller($c++);
 	    print STDERR " ($sub)\n\tfrom line $line of $file";
@@ -884,11 +936,56 @@ sub stderr {
 
 =item C<diff>
 
-To Be Written.
+Not Yet Implemented.
 
 =cut
 
 sub diff {
+}
+
+
+
+=item C<match>
+
+Matches one or more input lines against an equal number of regular
+expressions.  The arguments are passed in as either scalars, in which
+case each is split on newline boundaries, or as array references.
+Trailing newlines are stripped from each line and regular expression.
+An unequal number of lines and regular expressions fails immediately
+and returns FALSE before any comparisons are performed.  Comparison is
+performed for each entire line, that is, with each regular expression
+anchored at both the start of line (^) and end of line ($).
+
+Returns TRUE if each line matched each regular expression, FALSE
+otherwise.
+
+=cut
+
+sub match {
+    my($self, $lines, $regexes) = @_;
+    if (! ref $lines) {
+	my @line_array = split(/\n/, $lines, -1);
+	pop(@line_array);
+	$lines = \@line_array;
+    }
+    if (! ref $regexes) {
+	my @regex_array = split(/\n/, $regexes, -1);
+	pop(@regex_array);
+	$regexes = \@regex_array;
+    }
+    return undef if @$lines != @$regexes;
+    my($i, $re, $l);
+    for ($i = 0; $i <= $#{ $regexes }; $i++) {
+	chomp($l = $lines->[$i]);
+	chomp($re = $regexes->[$i]);
+	#if ($l !~ m/^$re$/) {
+	#	print STDERR "Line ", $i+1, " does not match:\n";
+	#	print STDERR "Expect:  $re\n";
+	#	print STDERR "Got:     $l\n";
+	#}
+	return undef if $l !~ m/^$re$/;
+    }
+    return 1;
 }
 
 

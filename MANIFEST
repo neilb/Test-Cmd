@@ -9,6 +9,7 @@ t/cleanup.t
 t/exit.t
 t/fail.t
 t/interpreter.t
+t/match.t
 t/no_result.t
 t/pass.t
 t/preserve.t
@@ -16,6 +17,7 @@ t/prog.t
 t/read.t
 t/run.t
 t/stderr.t
+t/stdin.t
 t/stdout.t
 t/string.t
 t/subdir.t

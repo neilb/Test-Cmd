@@ -7,7 +7,7 @@
 # (It may become useful if the test is moved to ./t subdirectory.)
 
 use Test;
-BEGIN { $| = 1; plan tests => 16, onfail => sub { $? = 1 if $ENV{AEGIS_TEST} } }
+BEGIN { $| = 1; plan tests => 20, onfail => sub { $? = 1 if $ENV{AEGIS_TEST} } }
 END {print "not ok 1\n" unless $loaded;}
 use Test::Cmd;
 $loaded = 1;
@@ -18,6 +18,8 @@ ok(1);
 # Insert your test code below (better if it prints "ok 13"
 # (correspondingly "not ok 13") depending on the success of chunk 13
 # of the test code):
+
+my($ret, $workdir_foo, $workdir_bar, $no_such_subdir);
 
 my $test = Test::Cmd->new;
 ok($test);
@@ -37,10 +39,24 @@ ok($test);
 ok($test->workdir);
 ok(-d $test->workdir);
 
-my $foo;
+$no_such_subdir = $test->catfile('no', 'such', 'subdir');
+
+$test = Test::Cmd->new(workdir => $no_such_subdir);
+ok(! $test);
+
 $test = Test::Cmd->new(workdir => 'foo');
 ok($test);
-ok($foo = $test->workdir);
-ok($test->workdir('bar'));
-ok(-d $foo);
-ok(-d $test->workdir);
+$workdir_foo = $test->workdir;
+ok($workdir_foo);
+
+$ret = $test->workdir('bar');
+ok($ret);
+$workdir_bar = $test->workdir;
+ok($workdir_bar);
+
+$ret = $test->workdir($no_such_subdir);
+ok(! $ret);
+ok($workdir_bar eq $test->workdir);
+
+ok(-d $workdir_foo);
+ok(-d $workdir_bar);

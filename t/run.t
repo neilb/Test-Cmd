@@ -17,7 +17,7 @@ BEGIN {
     } else {
 	$iswin32 = $^O eq "MSWin32";
     }
-    plan tests => 34, onfail => sub { $? = 1 if $ENV{AEGIS_TEST} }
+    plan tests => 45, onfail => sub { $? = 1 if $ENV{AEGIS_TEST} }
 }
 END {print "not ok 1\n" unless $loaded;}
 use Test::Cmd;
@@ -130,52 +130,81 @@ ok(-x $scriptx);
 # directory."  Now we do some real tests.
 
 #
-$test = Test::Cmd->new(prog => 'script', interpreter => "$^X", workdir => '', subdir => 'script_subdir');
+$test = Test::Cmd->new(prog => 'script', interpreter => $^X, workdir => '', subdir => 'script_subdir');
 ok($test);
 
-$test->run();
-ok($? == 0);
+$ret = $test->run();
+ok($ret == 0);
 ok($test->stdout eq "script:  STDOUT:  $wdir:  ''\n");
 ok($test->stderr eq "script:  STDERR:  $wdir:  ''\n");
 
-$test->run(args => 'arg1 arg2 arg3');
-ok($? == 0);
+$ret = $test->run(args => 'arg1 arg2 arg3');
+ok($ret == 0);
 ok($test->stdout eq "script:  STDOUT:  $wdir:  'arg1 arg2 arg3'\n");
 
-$test->run(chdir => $test->curdir, args => 'x y z');
-ok($? == 0);
+# Execute "scriptx" in the middle of the run here,
+# so we know it doesn't affect the $test->prog value.
+$ret = $test->run(prog => 'scriptx', args => 'foo');
+ok($ret == 0);
+ok($test->stdout eq "$scriptx:  STDOUT:  $wdir:  'foo'\n");
+ok($test->stderr eq "$scriptx:  STDERR:  $wdir:  'foo'\n");
+
+$ret = $test->run(chdir => $test->curdir, args => 'x y z');
+ok($ret == 0);
 ok($test->stdout eq "script:  STDOUT:  ${\$test->workdir}:  'x y z'\n");
 ok($test->stderr eq "script:  STDERR:  ${\$test->workdir}:  'x y z'\n");
 
 $subdir = $test->workpath('script_subdir');
 
-$test->run(chdir => 'script_subdir');
-ok($? == 0);
+$ret = $test->run(chdir => 'script_subdir');
+ok($ret == 0);
 ok($test->stdout eq "script:  STDOUT:  $subdir:  ''\n");
 ok($test->stderr eq "script:  STDERR:  $subdir:  ''\n");
+
+$ret = $test->run(chdir => 'no_subdir');
+ok(! defined $ret);
+
+$ret = $test->run(prog => 'no_script', interpreter => $^X);
+ok($ret != 0);
+
+$ret = $test->run(prog => 'no_script', interpreter => 'no_interpreter');
+ok($ret != 0);
 
 #
 $testx = Test::Cmd->new(prog => 'scriptx', workdir => '', subdir => 'scriptx_subdir');
 ok($testx);
 
-$testx->run();
-ok($? == 0);
+$ret = $testx->run();
+ok($ret == 0);
 ok($testx->stdout eq "$scriptx:  STDOUT:  $wdir:  ''\n");
 ok($testx->stderr eq "$scriptx:  STDERR:  $wdir:  ''\n");
 
-$testx->run(args => 'foo bar');
-ok($? == 0);
+$ret = $testx->run(args => 'foo bar');
+ok($ret == 0);
 ok($testx->stdout eq "$scriptx:  STDOUT:  $wdir:  'foo bar'\n");
 ok($testx->stderr eq "$scriptx:  STDERR:  $wdir:  'foo bar'\n");
 
-$testx->run(chdir => $testx->curdir, args => 'baz');
-ok($? == 0);
+# Execute "script" in the middle of the run here,
+# so we know it doesn't affect the $test->prog value.
+$ret = $testx->run(prog => 'script', interpreter => $^X, args => 'bar');
+ok($ret == 0);
+ok($testx->stdout eq "script:  STDOUT:  $wdir:  'bar'\n");
+ok($testx->stderr eq "script:  STDERR:  $wdir:  'bar'\n");
+
+$ret = $testx->run(chdir => $testx->curdir, args => 'baz');
+ok($ret == 0);
 ok($testx->stdout eq "$scriptx:  STDOUT:  ${\$testx->workdir}:  'baz'\n");
 ok($testx->stderr eq "$scriptx:  STDERR:  ${\$testx->workdir}:  'baz'\n");
 
 $subdir = $testx->workpath('scriptx_subdir');
 
-$testx->run(chdir => 'scriptx_subdir');
-ok($? == 0);
+$ret = $testx->run(chdir => 'scriptx_subdir');
+ok($ret == 0);
 ok($testx->stdout eq "$scriptx:  STDOUT:  $subdir:  ''\n");
 ok($testx->stderr eq "$scriptx:  STDERR:  $subdir:  ''\n");
+
+$ret = $testx->run(chdir => 'no_subdir');
+ok(! defined $ret);
+
+$ret = $testx->run(prog => 'no_prog');
+ok($ret != 0);

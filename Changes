@@ -1,5 +1,28 @@
 Revision history for Perl extension Test::Cmd.
 
+0.04  Tue Feb  1 05:20:19 CST 2000
+
+	- Development begun.
+
+	- Removed unnecessary t0001a.pl file (internal testing glue
+	  for the change management system).
+
+	- In the run() method, add the ability to pipe input into a
+	  command.
+
+	- Add a match() method that matches input lines one-for-one
+	  against an equal number of of regular expressions.
+
+	- Have the run() method support 'prog' and 'interpreter' arguments,
+	  for one-shot execution of a program.
+
+	- Remove direct exception throws (calls to $self->no_result)
+	  by the run() and workdir() methods.  Exceptions should be
+	  handled by the test itself or a subclass specific to the
+	  program under test.
+
+
+
 0.03  Wed Jan 12 18:02:38 CST 2000
 
 	- Development begun.

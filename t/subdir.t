@@ -16,7 +16,7 @@ BEGIN {
     } else {
 	$iswin32 = $^O eq "MSWin32";
     }
-    plan tests => 18, onfail => sub { $? = 1 if $ENV{AEGIS_TEST} }
+    plan tests => 19, onfail => sub { $? = 1 if $ENV{AEGIS_TEST} }
 }
 END {print "not ok 1\n" unless $loaded;}
 use Test::Cmd;
@@ -30,6 +30,9 @@ ok(1);
 # of the test code):
 
 my($test, $ret, $wdir);
+
+$test = Test::Cmd->new(workdir => '', subdir => ['no', 'such', 'subdir']);
+ok(! $test);
 
 $test = Test::Cmd->new(workdir => '', subdir => 'foo');
 ok($test);
