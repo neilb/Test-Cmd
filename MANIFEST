@@ -6,12 +6,14 @@ README
 t/ENV_PRESERVE.t
 t/basename.t
 t/cleanup.t
+t/exit.t
 t/fail.t
 t/interpreter.t
 t/no_result.t
 t/pass.t
 t/preserve.t
 t/prog.t
+t/read.t
 t/run.t
 t/stderr.t
 t/stdout.t

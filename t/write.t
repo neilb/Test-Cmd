@@ -16,7 +16,7 @@ BEGIN {
     } else {
 	$iswin32 = $^O eq "MSWin32";
     }
-    plan tests => 15, onfail => sub { $? = 1 if $ENV{AEGIS_TEST} }
+    plan tests => 21, onfail => sub { $? = 1 if $ENV{AEGIS_TEST} }
 }
 END {print "not ok 1\n" unless $loaded;}
 use Test::Cmd;
@@ -45,6 +45,20 @@ $ret = $test->write(['bar', 'file3'], <<EOF);
 Test file #3 (should not get created).
 EOF
 ok(! $ret);
+
+$ret = $test->write($test->workpath('file4'), <<EOF);
+Test file #4.
+EOF
+ok($ret);
+$ret = $test->write($test->workpath('foo', 'file5'), <<EOF);
+Test file #5.
+EOF
+ok($ret);
+$ret = $test->write($test->workpath('bar', 'file6'), <<EOF);
+Test file #6 (should not get created).
+EOF
+ok(! $ret);
+
 $wdir = $test->workdir;
 ok($wdir);
 
@@ -54,16 +68,19 @@ ok($wdir);
 # mean we need to skip the related tests on Win32 platforms.
 $ret = chmod(0500, $wdir);
 skip($iswin32, $ret == 1);
-$ret = $test->write('file4', <<EOF);
-Test file #4 (should not get created).
+$ret = $test->write('file7', <<EOF);
+Test file #7 (should not get created).
 EOF
-skip($iswin32, ! $ret);
+skip($iswin32 || $> == 0, ! $ret);
 
 $ret = chdir($wdir);
 ok($ret);
-ok(-f 'file1');
 ok(-d 'foo');
+ok(! -d 'bar');
+ok(-f 'file1');
 ok(-f $test->workpath('foo', 'file2'));
 ok(! -f $test->workpath('bar', 'file3'));
-ok(! -d 'bar');
-skip($iswin32, ! -f 'file4');
+ok(-f 'file4');
+ok(-f $test->workpath('foo', 'file5'));
+ok(! -f $test->workpath('bar', 'file6'));
+skip($iswin32 || $> == 0, ! -f 'file7');

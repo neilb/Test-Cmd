@@ -5,8 +5,15 @@ sub MY::postamble {
     '
 # A couple of development targets to generate a text version of
 # the POD documentation, for easier inclusion on the web page.
+.podhtml:  $(DISTVNAME).html
+	@rm -f $@ && touch $@
+
 .podtxt:  $(DISTVNAME).txt
 	@rm -f $@ && touch $@
+
+$(DISTVNAME).html:	Cmd.pm
+	@rm -f $@
+	pod2html Cmd.pm > $@
 
 $(DISTVNAME).txt:	Cmd.pm
 	@rm -f $@

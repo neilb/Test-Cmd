@@ -1,5 +1,25 @@
 Revision history for Perl extension Test::Cmd.
 
+0.03  Wed Jan 12 18:02:38 CST 2000
+
+	- Development begun.
+
+	- Minor white space cleanup.
+
+	- Allow the write() method to take an absolute path name.
+
+	- Documentation cleanup.
+
+	- Add a read() method as a companion to write().
+
+	- Directories were still removed on fail/no result if
+	  PRESERVE_FAIL and PRESERVE_NO_RESULT were set.  Fixed.
+
+	- Where possible, use array assignment, not shift, for
+	  method arguments.
+
+
+
 0.02  Mon Jan  3 23:59:53 2000
 
 	- Add a string() method to arrange for printing info about

@@ -50,7 +50,7 @@ ok($ret == 1);
 $ret = chmod(0500, 'foo');
 skip($iswin32, $ret == 1);
 $ret = $test->subdir([qw(foo fail)]);
-skip($iswin32, ! $ret);
+skip($iswin32 || $> == 0, ! $ret);
 
 $ret = $test->subdir([qw(sub dir ectory)], 'sub');
 ok($ret == 1);
@@ -61,7 +61,7 @@ ok($ret == 3);
 ok(-d 'foo');
 ok(-d 'bar');
 ok(-d $test->workpath('foo', 'succeed'));
-skip($iswin32, ! -d $test->workpath('foo', 'fail'));
+skip($iswin32 || $> == 0, ! -d $test->workpath('foo', 'fail'));
 ok( -d 'sub');
 ok(! -d $test->workpath(qw(sub dir)));
 ok(! -d $test->workpath(qw(sub dir ectory)));
