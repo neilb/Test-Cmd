@@ -15,7 +15,7 @@ BEGIN {
     } else {
 	$iswin32 = $^O eq "MSWin32";
     }
-    plan tests => 45, onfail => sub { $? = 1 if $ENV{AEGIS_TEST} }
+    plan tests => 47, onfail => sub { $? = 1 if $ENV{AEGIS_TEST} }
 }
 END {print "not ok 1\n" unless $loaded;}
 use Test::Cmd;
@@ -161,7 +161,13 @@ ok(! defined $ret);
 $ret = $test->run(prog => 'no_script', interpreter => $^X);
 ok($ret != 0);
 
+$ret = $test->run(prog => 'script', interpreter => 'no_interpreter');
+ok($ret != 0);
+
 $ret = $test->run(prog => 'no_script', interpreter => 'no_interpreter');
+ok($ret != 0);
+
+$ret = $test->run(interpreter => 'no_interpreter');
 ok($ret != 0);
 
 #

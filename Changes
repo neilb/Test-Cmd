@@ -1,5 +1,17 @@
 Revision history for Perl extension Test::Cmd.
 
+1.03	Sat Jun  9 16:57:16 CDT 2001
+
+	- Make specification of an 'interpreter' to the run() method
+	  independent of whether a 'prog' has been specified.
+
+	- Actually store the absolute path to a workdir specified as a
+	  relative path, as advertised.
+	  (Thanks to Jonathan Ross <Jonathan.C.Ross@fmr.com> for
+	  finding this bug and contributing a patch.)
+
+
+
 1.02
 
 	- Small fix to make match() backwards compatible to Perl 5.003.

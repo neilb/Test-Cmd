@@ -17,7 +17,7 @@ use File::Basename ();	# don't import the basename() method, we redefine it
 use File::Find;
 use File::Spec;
 
-$VERSION = '1.02';
+$VERSION = '1.03';
 @ISA = qw(Exporter File::Spec);
 @EXPORT_OK = qw(match_exact match_regex diff_exact diff_regex);
 
@@ -473,7 +473,14 @@ sub workdir {
 	if (!mkdir($wdir, 0755)) {
 	    return undef;
 	}
-	$self->{'workdir'} = $wdir;
+	# The following better way to fetch the absolute path of the
+	# workdir isn't available in the Cwd module until sometime
+	# after 5.003:
+	#	$self->{'workdir'} = Cwd::abs_path($wdir);
+	my($save) = Cwd::cwd();
+	chdir($wdir);
+	$self->{'workdir'} = Cwd::cwd();
+	chdir($save);
 	push(@{$self->{'cleanup'}}, $self->{'workdir'});
     }
     $self->{'workdir'};
@@ -769,10 +776,13 @@ sub run {
 	    $args{'prog'} = $self->catfile($self->{'cwd'}, $args{'prog'});
 	}
 	$cmd = $args{'prog'};
-	$cmd = $args{'interpreter'}." ".$cmd if $args{'interpreter'};
     } else {
 	$cmd = $self->{'prog'};
-	$cmd = $self->{'interpreter'}." ".$cmd if $self->{'interpreter'};
+    }
+    if ($args{'interpreter'}) {
+	$cmd = $args{'interpreter'}." ".$cmd;
+    } elsif ($self->{'interpreter'}) {
+	$cmd = $self->{'interpreter'}." ".$cmd;
     }
     $cmd = $cmd." ".$args{'args'} if $args{'args'};
     $cmd =~ s/\$work/$self->{'workdir'}/g;

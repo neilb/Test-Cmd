@@ -13,6 +13,8 @@ ok(1);
 
 ######################### End of black magic.
 
+use File::Spec;
+
 my($ret, $workdir_foo, $workdir_bar, $no_such_subdir);
 
 my $test = Test::Cmd->new;
@@ -25,12 +27,12 @@ ok(! $test->workdir);
 
 $test = Test::Cmd->new(workdir => '');
 ok($test);
-ok($test->workdir);
+ok(File::Spec->file_name_is_absolute($test->workdir));
 ok(-d $test->workdir);
 
 $test = Test::Cmd->new(workdir => 'dir');
 ok($test);
-ok($test->workdir);
+ok(File::Spec->file_name_is_absolute($test->workdir));
 ok(-d $test->workdir);
 
 $no_such_subdir = $test->catfile('no', 'such', 'subdir');
@@ -41,12 +43,12 @@ ok(! $test);
 $test = Test::Cmd->new(workdir => 'foo');
 ok($test);
 $workdir_foo = $test->workdir;
-ok($workdir_foo);
+ok(File::Spec->file_name_is_absolute($workdir_foo));
 
 $ret = $test->workdir('bar');
 ok($ret);
 $workdir_bar = $test->workdir;
-ok($workdir_bar);
+ok(File::Spec->file_name_is_absolute($workdir_bar));
 
 $ret = $test->workdir($no_such_subdir);
 ok(! $ret);
