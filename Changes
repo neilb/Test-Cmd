@@ -7,6 +7,7 @@ Revision history for Perl module Test::Cmd
     - Added github repo to metadata and the pod
     - Reformatted Changes file as per CPAN::Changes::Spec
     - Fixed pod error RT#92082
+    - Pod spelling mistake RT#92081
 
 1.05 2001-09-07
 

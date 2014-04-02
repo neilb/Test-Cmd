@@ -1572,7 +1572,7 @@ the suffix for a directly-executable Perl script.)
 How to make a file or script executable varies widely from system to
 system, some systems using file name extensions to indicate executability,
 others using a file permission bit.  The differences are complicated to
-accomodate in a portable test script.  The easiest way to deal with this
+accommodate in a portable test script.  The easiest way to deal with this
 complexity is to avoid it if you can.
 
 If your test somehow requires executing a script that you generate
