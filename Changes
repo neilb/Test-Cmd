@@ -4,6 +4,7 @@ Revision history for Perl module Test::Cmd
 
     - Specified min perl version 5.6.0 in metadata and in code
     - Moved the modules into lib/Test/
+    - Added PREREQ_PM, TEST_REQUIRES and CONFIGURE_REQUIRES to Makefile.PL
     - Added github repo to metadata and the pod
     - Reformatted Changes file as per CPAN::Changes::Spec
     - Fixed pod error RT#92082
