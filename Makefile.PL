@@ -76,6 +76,11 @@ WriteMakefile(
         : ()
     ),
 
+    ($mm_ver >= 6.31
+        ? (LICENSE => 'perl')
+        : ()
+    ),
+
     ($mm_ver <= 6.45
         ? ()
         : (META_MERGE => {

@@ -7,6 +7,7 @@ Revision history for Perl module Test::Cmd
     - Added PREREQ_PM, TEST_REQUIRES and CONFIGURE_REQUIRES to Makefile.PL
     - Added github repo to metadata and the pod
     - Reformatted Changes file as per CPAN::Changes::Spec
+    - Specified license as 'perl' in metadata, to match doc
     - Fixed pod error RT#92082
     - Pod spelling mistake RT#92081
     - Clarification in doc for new(), that it returns undef on failure,
