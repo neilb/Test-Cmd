@@ -467,7 +467,7 @@ END {
 Create a new C<Test::Cmd> environment.  Arguments with which to initialize
 the environment are passed in as keyword-value pairs.  Fails if a
 specified temporary working directory or subdirectory cannot be created.
-Does NOT die or exit on failure, but returns FALSE if the test environment
+Does NOT die or exit on failure, but returns C<undef> if the test environment
 object cannot be created.
 
 =cut

@@ -8,6 +8,8 @@ Revision history for Perl module Test::Cmd
     - Reformatted Changes file as per CPAN::Changes::Spec
     - Fixed pod error RT#92082
     - Pod spelling mistake RT#92081
+    - Clarification in doc for new(), that it returns undef on failure,
+      and not false. RT#53619
 
 1.05 2001-09-07
 
