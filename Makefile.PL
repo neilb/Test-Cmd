@@ -35,16 +35,7 @@ $(DISTNAME)-Common-$(VERSION).txt:	Common.pm
 ';
 }
 
-@tests = (glob('t/*.t'), glob('t/Common/*.t'));
-
 WriteMakefile(
     'NAME'	=> 'Test::Cmd',
-    'VERSION_FROM' => 'Cmd.pm', # finds $VERSION
-    'PM'	=> {
-			'Cmd.pm'	=> '$(INST_LIBDIR)/Cmd.pm',
-			'Common.pm'	=> '$(INST_LIBDIR)/Cmd/Common.pm',
-		},
-    'test'	=> {
-			'TESTS' => "@tests",
-		},
+    'VERSION_FROM' => 'lib/Test/Cmd.pm',
 );

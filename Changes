@@ -2,6 +2,7 @@ Revision history for Perl module Test::Cmd
 
 1.06 2014-04-02
 
+    - Moved the modules into lib/Test/
     - Reformatted Changes file as per CPAN::Changes::Spec
 
 1.05 2001-09-07

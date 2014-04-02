@@ -10,15 +10,14 @@
 package Test::Cmd;
 
 use strict;
-use vars qw($VERSION @ISA @EXPORT_OK);
 use Exporter;
 use File::Basename ();	# don't import the basename() method, we redefine it
 use File::Find;
 use File::Spec;
 
-$VERSION = '1.05';
-@ISA = qw(Exporter File::Spec);
-@EXPORT_OK = qw(match_exact match_regex diff_exact diff_regex);
+our $VERSION = '1.06';
+our @ISA = qw(Exporter File::Spec);
+our @EXPORT_OK = qw(match_exact match_regex diff_exact diff_regex);
 
 
 

@@ -1,6 +1,6 @@
 Changes
-Cmd.pm
-Common.pm
+lib/Test/Cmd.pm
+lib/Test/Cmd/Common.pm
 MANIFEST
 Makefile.PL
 README
