@@ -1,6 +1,6 @@
 Revision history for Perl module Test::Cmd
 
-1.06 2014-04-02
+1.05_01 2014-04-02
 
     - Specified min perl version 5.6.0 in metadata and in code
     - Moved the modules into lib/Test/
