@@ -4,6 +4,7 @@ Revision history for Perl module Test::Cmd
 
     - Specified min perl version 5.6.0 in metadata and in code
     - Moved the modules into lib/Test/
+    - Added github repo to metadata and the pod
     - Reformatted Changes file as per CPAN::Changes::Spec
 
 1.05 2001-09-07

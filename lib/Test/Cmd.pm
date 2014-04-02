@@ -1631,6 +1631,10 @@ information about Cons, is available at:
 
 	http://www.dsmit.com/cons
 
+=head1 REPOSITORY
+
+L<https://github.com/neilbowers/Test-Cmd>
+
 =head1 AUTHORS
 
 Steven Knight, knight@baldmt.com
