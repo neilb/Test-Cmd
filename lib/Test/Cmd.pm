@@ -1607,7 +1607,7 @@ the appropriate magic that will execute it as a Perl script:
 	$output = `script`;
 	ok($output eq "$line\n");
 
-=back 4
+=back
 
 Addtional hints on writing portable tests are welcome.
 
