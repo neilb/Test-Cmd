@@ -9,15 +9,16 @@
 
 package Test::Cmd::Common;
 
+use 5.006;
 use strict;
-use vars qw($VERSION @ISA @EXPORT @EXPORT_OK
-	    $_exe $_o $_so $_a $_is_win32);
+use warnings;
 use Exporter ();
+our ($_exe, $_o, $_so, $_a, $_is_win32);
 
-$VERSION = '1.05';
-@ISA = qw(Test::Cmd Exporter);
+our $VERSION = '1.06';
+our @ISA = qw(Test::Cmd Exporter);
 
-@EXPORT_OK = qw($_exe $_o $_a $_so $_is_win32);
+our @EXPORT_OK = qw($_exe $_o $_a $_so $_is_win32);
 
 use Config;
 use Cwd;

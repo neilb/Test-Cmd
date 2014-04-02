@@ -9,7 +9,9 @@
 
 package Test::Cmd;
 
+use 5.006;
 use strict;
+use warnings;
 use Exporter;
 use File::Basename ();	# don't import the basename() method, we redefine it
 use File::Find;
