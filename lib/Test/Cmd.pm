@@ -497,6 +497,7 @@ sub new {
 	    return undef;
 	}
     }
+    push @Cleanup, $self;
     if (defined $self->{'subdir'}) {
 	if (! $self->subdir($self->{'subdir'})) {
 	    return undef;
@@ -507,7 +508,6 @@ sub new {
 
     $self->match_sub($self->{'match_sub'} || \&Test::Cmd::match_regex);
 
-    push @Cleanup, $self;
 
     $self;
 }

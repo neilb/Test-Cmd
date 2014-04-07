@@ -1,5 +1,9 @@
 Revision history for Perl module Test::Cmd
 
+1.05_02 2014-04-08
+    - If the constructor failed part way, it would sometimes leave cruft
+      behind in TMPDIR. RT#41504 - thanks ANDK.
+
 1.05_01 2014-04-02
 
     - Specified min perl version 5.6.0 in metadata and in code
