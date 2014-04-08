@@ -15,7 +15,7 @@ use warnings;
 use Exporter ();
 our ($_exe, $_o, $_so, $_a, $_is_win32);
 
-our $VERSION = '1.05_01';
+our $VERSION = '1.05_02';
 our @ISA = qw(Test::Cmd Exporter);
 
 our @EXPORT_OK = qw($_exe $_o $_a $_so $_is_win32);
