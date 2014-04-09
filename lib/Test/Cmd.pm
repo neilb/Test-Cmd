@@ -1639,6 +1639,8 @@ L<https://github.com/neilbowers/Test-Cmd>
 
 Steven Knight, knight@baldmt.com
 
+This module is now being maintained by Neil Bowers E<lt>neilb@cpan.orgE<gt>.
+
 =head1 COPYRIGHT
 
 Copyright 1999-2001 Steven Knight.  All rights reserved.  This program

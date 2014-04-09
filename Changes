@@ -6,6 +6,7 @@ Revision history for Perl module Test::Cmd
     - Fixed RT#92082
     - Fixed RT#92081
     - Fixed RT#53619
+    - Noted in the pod that I'm now maintaining it.
 
 1.05_02 2014-04-08
     - If the constructor failed part way, it would sometimes leave cruft
