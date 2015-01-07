@@ -17,7 +17,7 @@ use File::Basename ();	# don't import the basename() method, we redefine it
 use File::Find;
 use File::Spec;
 
-our $VERSION = '1.06';
+our $VERSION = '1.07';
 our @ISA = qw(Exporter File::Spec);
 our @EXPORT_OK = qw(match_exact match_regex diff_exact diff_regex);
 
@@ -1666,10 +1666,10 @@ software development process.  Information about Aegis is available at:
 	http://www.tip.net.au/~millerp/aegis.html
 
 Thanks to Michael Schwern for all of the thoughtful work he's put into
-Perl's standard testing methodology, including the C<Test::Simple> and
-C<Test::More> modules, and enhancement and maintenance of the C<Test>
-and C<Test::Harness> modules.  Thanks also to Christian Lemburg for
-the impressively complete C<Test::Unit> framework of modules.  Ideas
+Perl's standard testing methodology, including the L<Test::Simple> and
+L<Test::More> modules, and enhancement and maintenance of the L<Test>
+and L<Test::Harness> modules.  Thanks also to Christian Lemburg for
+the impressively complete L<Test::Unit> framework of modules.  Ideas
 from both have helped keep C<Test::Cmd> flexible enough to be useful in
 multiple testing frameworks.
 

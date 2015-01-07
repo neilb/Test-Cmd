@@ -1,5 +1,9 @@
 Revision history for Perl module Test::Cmd
 
+1.07 2015-01-07 NEILB
+    - Linkify external module references. JMATES++
+    - Added Test::Pod as a release test. JMATES++
+
 1.06 2014-04-09
     - First non-developer release by NEILB
     - Fixed RT#41504
