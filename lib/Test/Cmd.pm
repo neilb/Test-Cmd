@@ -138,11 +138,11 @@ software being tested.
 Consequently, no C<Test::Cmd> methods (including the C<new()> method)
 exit, die or throw any other sorts of exceptions (but they all do return
 useful error indications).  Exceptions or other error status should
-be handled by a higher layer: a subclass of C<Test::Cmd>, or another
-testing framework such as the C<Test> or C<Test::Simple> Perl modules,
+be handled by a higher layer: a subclass of L<Test::Cmd>, or another
+testing framework such as the L<Test> or L<Test::Simple> Perl modules,
 or by the test itself.
 
-(That said, see the C<Test::Cmd::Common> module if you want a similar
+(That said, see the L<Test::Cmd::Common> module if you want a similar
 module that provides exception handling, either to use directly in your
 own tests, or as an example of how to use C<Test::Cmd>.)
 
@@ -155,7 +155,7 @@ conjunction with another testing framework, the C<Test::Cmd> module can
 function as a I<fixture> (common startup code for multiple tests) for
 simple management of command execution and temporary workspaces.
 
-The C<Test::Cmd> module inherits C<File::Spec> methods
+The C<Test::Cmd> module inherits L<File::Spec> methods
 (C<file_name_is_absolute()>, C<catfile()>, etc.) to support writing
 tests portably across a variety of operating and file systems.
 
@@ -182,7 +182,7 @@ single testing script.
 =head2 C<Test::Harness>
 
 The C<Test::Cmd> module may be used in tests that print results in a
-format suitable for the standard Perl C<Test::Harness> module:
+format suitable for the standard Perl L<Test::Harness> module:
 
     use Test::Cmd;
 
@@ -208,12 +208,12 @@ format suitable for the standard Perl C<Test::Harness> module:
     $test->run(args => '-y input_file');
     if ($? == 0) { print "ok 5\n"; } else { print "not ok 5\n"; }
 
-Several other Perl modules simplify the use of C<Test::Harness>
+Several other Perl modules simplify the use of L<Test::Harness>
 by eliminating the need to hand-code the C<print> statements and
-test numbers.  The C<Test> module, the C<Test::Simple> module, and
-the C<Test::More> module all export an C<ok()> subroutine to test
+test numbers.  The L<Test> module, the L<Test::Simple> module, and
+the L<Test::More> module all export an C<ok()> subroutine to test
 conditions.  Here is how the above example would look rewritten to use
-C<Test::Simple>:
+L<Test::Simple>:
 
     use Test::Simple tests => 5;
     use Test::Cmd;
@@ -240,10 +240,10 @@ C<Test::Simple>:
 
 =head2 C<Test::Unit>
 
-The Perl C<Test::Unit> package provides a procedural testing interface
+The Perl L<Test::Unit> package provides a procedural testing interface
 modeled after a testing framework widely used in the eXtreme Programming
 development methodology.  The C<Test::Cmd> module can function as part
-of a C<Test::Unit> fixture that can set up workspaces as needed for a
+of a L<Test::Unit> fixture that can set up workspaces as needed for a
 set of tests.  This avoids having to repeat code to re-initialize an
 input file multiple times:
 
@@ -324,7 +324,7 @@ another testing framework:
 
     $test->pass;
 
-Note that the separate C<Test::Cmd::Common> wrapper module can simplify
+Note that the separate L<Test::Cmd::Common> wrapper module can simplify
 the above example even further by taking care of common exception
 handling cases within the testing object itself.
 
@@ -347,7 +347,7 @@ handling cases within the testing object itself.
 
     $test->pass;
 
-See the C<Test::Cmd::Common> module for details.
+See the L<Test::Cmd::Common> module for details.
 
 =head1 METHODS
 
@@ -1321,17 +1321,17 @@ sub _differ_no_lcs {
 
 =item C<diff_exact>
 
-Diffs two arrays of lines in a manner similar to the UNIX C<diff(1)>
+Diffs two arrays of lines in a manner similar to the UNIX L<diff(1)>
 utility.
 
-If the C<Algorithm::DiffOld> package is installed on the local system,
+If the L<Algorithm::DiffOld> package is installed on the local system,
 output describing the differences between the input lines and the
-matching lines, in C<diff(1)> format, is saved to the C<$output> array
+matching lines, in L<diff(1)> format, is saved to the C<$output> array
 reference.  In the diff output, the expected output lines are considered
 the "old" (left-hand) file, and the actual output is considered the
 "new" (right-hand) file.
 
-If the C<Algorithm::DiffOld> package is I<not> installed on the local
+If the L<Algorithm::DiffOld> package is I<not> installed on the local
 system, the Expected and Actual contents are saved as-is to the
 C<$output> array reference.
 
@@ -1364,16 +1364,16 @@ sub diff_exact {
 =item C<diff_regex>
 
 Diffs one or more input lines against one or more regular expressions
-in a manner similar to the UNIX C<diff(1)> utility.
+in a manner similar to the UNIX L<diff(1)> utility.
 
-If the C<Algorithm::DiffOld> package is installed on the local system,
+If the L<Algorithm::DiffOld> package is installed on the local system,
 output describing the differences between the input lines and the
-matching lines, in C<diff(1)> format, is saved to the C<$output> array
+matching lines, in L<diff(1)> format, is saved to the C<$output> array
 reference.  In the diff output, the expected output lines are considered
 the "old" (left-hand) file, and the actual output is considered the
 "new" (right-hand) file.
 
-If the C<Algorithm::DiffOld> package is I<not> installed on the local
+If the L<Algorithm::DiffOld> package is I<not> installed on the local
 system, the Expected and Actual contents are saved as-is to the
 C<$output> array reference.
 
@@ -1542,21 +1542,21 @@ the returned path in any way.
 
 =item Use C<File::Spec> methods for manipulating path names.
 
-The C<File::Spec> module provides a system-independent interface for
+The L<File::Spec> module provides a system-independent interface for
 manipulating path names.  Because the C<Test::Cmd> class is a sub-class
-of the C<File::Spec> class, you can use these methods directly as follows:
+of the L<File::Spec> class, you can use these methods directly as follows:
 
 	if (! Test::Cmd->file_name_is_absolute($prog)) {
 		my $prog = Test::Cmd->catfile(Test::Cmd->here, $prog);
 	}
 
 For details about the available methods and their use, see the
-documentation for the C<File::Spec> module and its sub-modules, especially
-the C<File::Spec::Unix> modules.
+documentation for the L<File::Spec> module and its sub-modules, especially
+the L<File::Spec::Unix> modules.
 
 =item Use C<Config> for file-name suffixes, where possible.
 
-The standard C<Config> module provides values that reflect the file-name
+The standard L<Config> module provides values that reflect the file-name
 suffixes on the system for which the Perl executable was built.
 This provides convenient portability for situations where a file name
 may have different extensions on different systems:
@@ -1613,9 +1613,9 @@ Addtional hints on writing portable tests are welcome.
 
 =head1 SEE ALSO
 
-perl(1), Algorithm::DiffOld(3), File::Find(3), File::Spec(3), Test(3),
-Test::Cmd::Common(3), Test::Harness(3), Test::More(3), Test::Simple(3),
-Test::Unit(3).
+L<perl(1)>, L<Algorithm::DiffOld>, L<File::Find>, L<File::Spec>, L<Test>,
+L<Test::Cmd::Common>, L<Test::Harness>, L<Test::More>, L<Test::Simple>,
+L<Test::Unit>.
 
 A rudimentary page for the C<Test::Cmd> module is available at:
 
@@ -1624,7 +1624,7 @@ A rudimentary page for the C<Test::Cmd> module is available at:
 The most involved example of using the C<Test::Cmd> package to test
 a real-world application is the C<cons-test> testing suite for the
 Cons software construction utility.  The suite uses a sub-class of
-C<Test::Cmd::Common> (which in turn is a sub-class of C<Test::Cmd>)
+L<Test::Cmd::Common> (which in turn is a sub-class of C<Test::Cmd>)
 to provide common, application-specific infrastructure across a
 large number of end-to-end application tests.  The suite, and other
 information about Cons, is available at:
