@@ -81,13 +81,13 @@ throw exceptions and exit on failure.  This makes it unnecessary to add
 explicit checks for return values, making the test scripts themselves
 simpler to write and easier to read.
 
-The C<Test::Cmd::Common> class is a subclass of C<Test::Cmd>.  In
+The C<Test::Cmd::Common> class is a subclass of L<Test::Cmd>.  In
 essence, C<Test::Cmd::Common> is a wrapper that treats common
-C<Test::Cmd> error conditions as exceptions that terminate the test.
+L<Test::Cmd> error conditions as exceptions that terminate the test.
 You can use C<Test::Cmd::Common> directly, or subclass it for your
 program and add additional (or override) methods to tailor it to your
 program's specific needs.  Alternatively, C<Test::Cmd::Common> serves as
-a useful example of how to define your own C<Test::Cmd> subclass.
+a useful example of how to define your own L<Test::Cmd> subclass.
 
 The C<Test::Cmd::Common> module provides the following importable
 variables:
@@ -160,7 +160,7 @@ BEGIN {
 
 Creates a new test environment object.  Any arguments are keyword-value
 pairs that are passed through to the construct method for the base
-class from which we inherit our methods (that is, the C<Test::Cmd>
+class from which we inherit our methods (that is, the L<Test::Cmd>
 class).  In the normal case, this should be the program to be tested and
 a description of the functionality being tested:
 
@@ -576,12 +576,12 @@ C<PRESERVE>,
 C<PRESERVE_FAIL>,
 C<PRESERVE_NO_RESULT>,
 and C<PRESERVE_PASS>
-environment variables from the C<Test::Cmd> module.
-See the C<Test::Cmd> documentation for details.
+environment variables from the L<Test::Cmd> module.
+See the L<Test::Cmd> documentation for details.
 
 =head1 SEE ALSO
 
-perl(1), Test::Cmd(3).
+L<perl(1)>, L<Test::Cmd>.
 
 The most involved example of using the C<Test::Cmd::Common> module
 to test a real-world application is the C<cons-test> testing suite
