@@ -29,6 +29,31 @@ Test::Cmd - Perl module for portable testing of commands and scripts
 
 =head1 SYNOPSIS
 
+An example using L<Test::More> with this module to run a command
+and then test the exit code, standard out, and standard error:
+
+  use Test::Cmd;
+  use Test::More tests => 3;
+
+  my $test = Test::Cmd->new( prog => 'outerr', workdir => '' );
+  $test->run();
+
+  is( $test->stdout, "out\n", 'standard out' );
+  is( $test->stderr, "err\n", 'standard error' );
+  is( $? >> 8,       1,       'exit status' );
+
+Where C<outerr> is the shell script:
+
+  $ cat outerr 
+  #!/bin/sh
+  echo out
+  echo >&2 err
+  exit 1
+  $ chmod +x outerr
+
+See below for other examples. Otherwise, the full list of available
+methods is:
+
   use Test::Cmd;
 
   $test = Test::Cmd->new(prog => 'program_or_script_to_test',
@@ -1616,6 +1641,11 @@ Addtional hints on writing portable tests are welcome.
 L<perl(1)>, L<Algorithm::DiffOld>, L<File::Find>, L<File::Spec>, L<Test>,
 L<Test::Cmd::Common>, L<Test::Harness>, L<Test::More>, L<Test::Simple>,
 L<Test::Unit>.
+
+Alternative command-testing modules include:
+
+L<Test::Exit>, L<Test::Output>, or using L<Capture::Tiny> with one of
+the above test modules, for example L<Test::More>.
 
 A rudimentary page for the C<Test::Cmd> module is available at:
 
