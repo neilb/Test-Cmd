@@ -17,7 +17,7 @@ use File::Basename ();	# don't import the basename() method, we redefine it
 use File::Find;
 use File::Spec;
 
-our $VERSION = '1.07';
+our $VERSION = '1.08';
 our @ISA = qw(Exporter File::Spec);
 our @EXPORT_OK = qw(match_exact match_regex diff_exact diff_regex);
 
