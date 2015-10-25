@@ -1,5 +1,11 @@
 Revision history for Perl module Test::Cmd
 
+1.09 2015-10-25 NEILB
+    - README updated with current location of Aegis project.
+      Thanks to @SparkeyG for the pull request
+    - Updated github repo URL after changing my github username
+    - Switched to Dist::Zilla
+
 1.08 2015-01-25 NEILB
     - Documentation improvements from JMATES++.
 
