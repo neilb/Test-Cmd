@@ -15,7 +15,7 @@ BEGIN {
     } else {
 	$iswin32 = $^O eq "MSWin32";
     }
-    plan tests => 53, onfail => sub { $? = 1 if $ENV{AEGIS_TEST} }
+    plan tests => 55, onfail => sub { $? = 1 if $ENV{AEGIS_TEST} }
 }
 END {print "not ok 1\n" unless $loaded;}
 use Test::Cmd;
@@ -145,6 +145,10 @@ ok($test->stderr eq "script:  xxx:  STDERR:  $wdir:  ''\n");
 $ret = $test->run(args => 'arg1 arg2 arg3');
 ok($ret == 0);
 ok($test->stdout eq "script:  xxx:  STDOUT:  $wdir:  'arg1 arg2 arg3'\n");
+
+$ret = $test->run(args => 0);
+ok($ret == 0);
+ok($test->stdout eq "script:  xxx:  STDOUT:  $wdir:  '0'\n");
 
 # Execute "scriptx" in the middle of the run here,
 # so we know it doesn't affect the $test->prog value.
