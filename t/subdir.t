@@ -12,7 +12,7 @@ BEGIN {
 	eval("require Win32");
 	$iswin32 = ! $@;
     } else {
-	$iswin32 = $^O eq "MSWin32";
+	$iswin32 = $^O eq "MSWin32" || $^O eq 'msys';
     }
     plan tests => 21, onfail => sub { $? = 1 if $ENV{AEGIS_TEST} }
 }

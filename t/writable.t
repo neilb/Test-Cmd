@@ -41,11 +41,11 @@ ok($ret == 0);
 
 # If we're running as root, then non-writability tests fail because root
 # can write to anything.  Let them know why we're skipping those tests.
-print "# Skipping tests because you're running with EUID of 0\n" if $> == 0;
-skip($> == 0, ! -w $test->curdir);
-skip($> == 0, ! -w 'file1');
-skip($> == 0, ! -w 'foo');
-skip($> == 0, ! -w $test->workpath('foo', 'file2'));
+print "# Skipping tests because you're running with EUID of 0\n" if $> == 0 || $^O eq 'msys';
+skip($> == 0 || $^O eq 'msys', ! -w $test->curdir);
+skip($> == 0 || $^O eq 'msys', ! -w 'file1');
+skip($> == 0 || $^O eq 'msys', ! -w 'foo');
+skip($> == 0 || $^O eq 'msys', ! -w $test->workpath('foo', 'file2'));
 
 $ret = $test->writable($wdir, 1);
 ok($ret == 0);
@@ -67,10 +67,10 @@ my %errs;
 $ret = $test->writable($wdir, 0, \%errs);
 ok($ret == 0);
 
-skip($> == 0, ! -w $test->curdir);
-skip($> == 0, ! -w 'file1');
-skip($> == 0, ! -w 'foo');
-skip($> == 0, ! -w $test->workpath('foo', 'file2'));
+skip($> == 0 || $^O eq 'msys', ! -w $test->curdir);
+skip($> == 0 || $^O eq 'msys', ! -w 'file1');
+skip($> == 0 || $^O eq 'msys', ! -w 'foo');
+skip($> == 0 || $^O eq 'msys', ! -w $test->workpath('foo', 'file2'));
 
 $ret = $test->writable($wdir);
 ok($ret == 0);
