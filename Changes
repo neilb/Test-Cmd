@@ -1,5 +1,8 @@
 Revision history for Perl module Test::Cmd
 
+1.09_01 2022-06-20 NEILB
+    - Changes to make it pass tests on Windows/msys, from Paulo Custodio.
+
 1.09 2015-10-25 NEILB
     - README updated with current location of Aegis project.
       Thanks to @SparkeyG for the pull request
