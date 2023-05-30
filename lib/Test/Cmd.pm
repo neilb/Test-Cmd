@@ -43,7 +43,7 @@ and then test the exit code, standard out, and standard error:
 
 Where C<outerr> is the shell script:
 
-  $ cat outerr 
+  $ cat outerr
   #!/bin/sh
   echo out
   echo >&2 err
@@ -273,29 +273,29 @@ input file multiple times:
 
     use Test::Unit;
     use Test::Cmd;
-    
+
     my $test;
-    
+
     $input = <<'EOF';
     test_program should process this input
     and exit successfully (status 0).
     EOF
-    
+
     sub set_up {
         $test = Test::Cmd->new(prog => 'test_program', workdir => '');
         $test->write('input_file', $input);
     }
-    
+
     sub test_x {
         my $result = $test->run(args => '-x input_file');
         assert($result == 0, "failed test_x\n");
     }
-    
+
     sub test_y {
         my $result = $test->run(args => '-y input_file');
         assert($result == 0, "failed test_y\n");
     }
-    
+
     create_suite();
     run_suite;
 
@@ -546,7 +546,7 @@ Sets the verbose level for the environment object to the specified value.
 
 sub verbose {
     my $self = shift;
-    $self->{'verbose'} = $_;
+    $self->{'verbose'} = $_[0];
 }
 
 
