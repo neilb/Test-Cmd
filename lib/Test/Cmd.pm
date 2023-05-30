@@ -974,7 +974,7 @@ sub run {
 	    $cmd = $self->{'interpreter'}." ".$cmd;
 	}
     }
-    $cmd = $cmd." ".$args{'args'} if $args{'args'};
+    $cmd = $cmd." ".$args{'args'} if defined $args{'args'};
     $cmd =~ s/\$work/$self->{'workdir'}/g;
     $cmd = "|$cmd 1>$stdout_file 2>$stderr_file";
     print STDERR "Invoking $cmd\n" if $self->{'verbose'};
