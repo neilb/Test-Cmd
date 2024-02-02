@@ -94,7 +94,7 @@ Revision history for Perl module Test::Cmd
       due to symbolic links or omission of NT drive letters.
 
 
-1.01 200-08-29
+1.01 2000-08-29
 
     - Add a match_exact() method for non-regex matches.
 
